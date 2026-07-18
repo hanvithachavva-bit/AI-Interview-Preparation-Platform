@@ -1,8 +1,7 @@
 const User = require("../models/User");
-
+const bcrypt = require("bcryptjs");
 const register = async (req, res) => {
   try {
-    console.log("NEW CONTROLLER IS RUNNING");
     const { fullName, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -13,17 +12,24 @@ const register = async (req, res) => {
         message: "Email already registered",
       });
     }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
     const newUser = await User.create({
       fullName,
       email,
-      password,
+      password: hashedPassword,
     });
-    console.log(req.body);
+    const userResponse = {
+    _id: newUser._id,
+    fullName: newUser.fullName,
+    email: newUser.email,
+    role: newUser.role,
+  };
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-      user: newUser,
+      user: userResponse,
     });
 
   } catch (error) {
