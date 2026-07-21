@@ -30,6 +30,31 @@ const createInterview = async (req, res) => {
   }
 };
 
+// ================= GET MY INTERVIEWS =================
+
+const getMyInterviews = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const interviews = await Interview.find({ userId }).sort({
+      createdAt: -1,
+    });
+
+    res.status(200).json({
+      success: true,
+      count: interviews.length,
+      interviews,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createInterview,
+  getMyInterviews,
 };
