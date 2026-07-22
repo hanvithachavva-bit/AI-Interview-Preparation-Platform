@@ -54,7 +54,40 @@ const getMyInterviews = async (req, res) => {
   }
 };
 
+// ================= GET INTERVIEW BY ID =================
+
+const getInterviewById = async (req, res) => {
+  try {
+    const interviewId = req.params.id;
+    const userId = req.user.id;
+
+    const interview = await Interview.findOne({
+      _id: interviewId,
+      userId,
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      interview,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createInterview,
   getMyInterviews,
+  getInterviewById,
 };
