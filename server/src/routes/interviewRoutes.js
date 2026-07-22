@@ -6,17 +6,17 @@ const {
   createInterview,
   getMyInterviews,
   getInterviewById,
+  deleteInterview,
 } = require("../controllers/interviewController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Create Interview
 router.post("/", authMiddleware, createInterview);
 
-// Get All Interviews of Logged-in User
 router.get("/", authMiddleware, getMyInterviews);
 
-// Get Single Interview by ID
 router.get("/:id", authMiddleware, getInterviewById);
+
+router.delete("/:id", authMiddleware, deleteInterview);
 
 module.exports = router;
