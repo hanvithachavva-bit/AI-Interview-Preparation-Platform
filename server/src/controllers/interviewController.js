@@ -1,6 +1,5 @@
 const Interview = require("../models/Interview");
 
-// ================= CREATE INTERVIEW =================
 
 const createInterview = async (req, res) => {
   try {
@@ -115,9 +114,55 @@ const deleteInterview = async (req, res) => {
   }
 };
 
+const updateInterview = async (req, res) => {
+  try {
+    const interviewId = req.params.id;
+    const userId = req.user.id;
+
+    const { company, role, type, difficulty } = req.body;
+
+    const interview = await Interview.findOneAndUpdate(
+      {
+        _id: interviewId,
+        userId,
+      },
+      {
+        company,
+        role,
+        type,
+        difficulty,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Interview updated successfully",
+      interview,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createInterview,
   getMyInterviews,
   getInterviewById,
   deleteInterview,
+  updateInterview,
 };
