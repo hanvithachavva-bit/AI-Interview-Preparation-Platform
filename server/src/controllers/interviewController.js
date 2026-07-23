@@ -1,7 +1,6 @@
 const Interview = require("../models/Interview");
 
-// ================= CREATE INTERVIEW =================
-
+const { generateQuestions } = require("../services/geminiService");
 const createInterview = async (req, res) => {
   try {
     const { company, role, type, difficulty } = req.body;
@@ -14,12 +13,19 @@ const createInterview = async (req, res) => {
       role,
       type,
       difficulty,
-    });
 
-    res.status(201).json({
+    });
+    const prompt = `
+    Generate 10 ${difficulty} level ${type} interview questions
+    for the role of ${role} at ${company}.
+
+    Return only the questions as a numbered list.
+    `;
+    const questions = await generateQuestions(prompt);
+
+    res.status(200).json({
       success: true,
-      message: "Interview created successfully",
-      interview,
+      questions,
     });
 
   } catch (error) {
