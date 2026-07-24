@@ -64,6 +64,11 @@ const interviewSchema = new mongoose.Schema(
     promptVersion: {
       type: String,
     },
+    questions: [
+      {
+        type: String,
+      },
+    ],
 
     qa: [
       {

@@ -7,25 +7,42 @@ const createInterview = async (req, res) => {
 
     const userId = req.user.id;
 
-    const interview = await Interview.create({
+    // Create AI prompt
+    const prompt = `
+Generate 10 ${difficulty} level ${type} interview questions
+for the role of ${role} at ${company}.
+
+Return only the questions as a numbered list.
+`;
+
+    // Generate questions using Gemini
+    const questions = await generateQuestions(prompt);
+
+    // Convert response into an array
+    const questionArray = questions
+      .split("\n")
+      .map((question) => question.replace(/^\d+\.\s*/, "").trim())
+      .filter((question) => question !== "");
+
+    console.log(questionArray);
+
+    // Create interview document
+    const interview = new Interview({
       userId,
       company,
       role,
       type,
       difficulty,
-
+      questions: questionArray,
     });
-    const prompt = `
-    Generate 10 ${difficulty} level ${type} interview questions
-    for the role of ${role} at ${company}.
 
-    Return only the questions as a numbered list.
-    `;
-    const questions = await generateQuestions(prompt);
+    // Save to MongoDB
+    await interview.save();
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      questions,
+      message: "Interview created successfully",
+      interview,
     });
 
   } catch (error) {
@@ -35,6 +52,7 @@ const createInterview = async (req, res) => {
     });
   }
 };
+
 
 // ================= GET MY INTERVIEWS =================
 
