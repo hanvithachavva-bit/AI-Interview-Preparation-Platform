@@ -1,6 +1,8 @@
 const Interview = require("../models/Interview");
-
-const { generateQuestions } = require("../services/geminiService");
+const {
+  generateQuestions,
+  evaluateAnswer,
+} = require("../services/geminiService");
 const createInterview = async (req, res) => {
   try {
     const { company, role, type, difficulty } = req.body;
@@ -200,10 +202,13 @@ const submitAnswer = async (req, res) => {
         message: "Interview not found",
       });
     }
+    const evaluation = await evaluateAnswer(question, answer);
 
     interview.qa.push({
       question,
       answer,
+      score: evaluation.score,
+      feedback: evaluation.feedback,
     });
 
     await interview.save();
