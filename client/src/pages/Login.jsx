@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import api from "../services/api";
 function Login() {
   const [formData, setFormData] = useState({
     email: "",
@@ -14,8 +14,21 @@ function Login() {
     });
   };
 
+  // Handle form submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await api.post("/auth/login", formData);
+
+      console.log(response.data);
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+    }
+  };
+
   return (
-    <div>
+    <form onSubmit={handleSubmit}>
       <h1>Login</h1>
 
       <input
@@ -36,7 +49,14 @@ function Login() {
         value={formData.password}
         onChange={handleChange}
       />
-    </div>
+
+      <br />
+      <br />
+
+      <button type="submit">
+        Login
+      </button>
+    </form>
   );
 }
 
