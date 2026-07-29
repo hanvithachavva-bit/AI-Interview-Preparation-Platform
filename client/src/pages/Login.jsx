@@ -1,10 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
 
   // Handle input changes
   const handleChange = (e) => {
@@ -21,7 +26,15 @@ function Login() {
     try {
       const response = await api.post("/auth/login", formData);
 
+      // Save JWT token
+      localStorage.setItem("token", response.data.token);
+
+      // Save logged-in user in AuthContext
+      setUser(response.data.user);
+      
+
       console.log(response.data);
+      navigate("/dashboard");
     } catch (error) {
       console.log(error.response?.data || error.message);
     }
@@ -53,9 +66,7 @@ function Login() {
       <br />
       <br />
 
-      <button type="submit">
-        Login
-      </button>
+      <button type="submit">Login</button>
     </form>
   );
 }
