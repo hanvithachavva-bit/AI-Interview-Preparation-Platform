@@ -4,7 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import CreateInterview from "./pages/CreateInterview";
 function App() {
   return (
     <BrowserRouter>
@@ -19,6 +19,14 @@ function App() {
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-interview"
+          element={
+          <ProtectedRoute>
+            <CreateInterview />
+          </ProtectedRoute>
           }
         />
       </Routes>
