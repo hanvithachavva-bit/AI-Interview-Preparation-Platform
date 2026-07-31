@@ -3,16 +3,20 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
 import CreateInterview from "./pages/CreateInterview";
+import Interview from "./pages/Interview";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
@@ -21,12 +25,22 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/create-interview"
           element={
-          <ProtectedRoute>
-            <CreateInterview />
-          </ProtectedRoute>
+            <ProtectedRoute>
+              <CreateInterview />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/interview/:id"
+          element={
+            <ProtectedRoute>
+              <Interview />
+            </ProtectedRoute>
           }
         />
       </Routes>

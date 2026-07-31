@@ -1,6 +1,8 @@
 import { useState } from "react";
-
+import api from "../services/api";
+import { useNavigate } from "react-router-dom";
 function CreateInterview() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     role: "",
     difficulty: "Easy",
@@ -16,10 +18,16 @@ function CreateInterview() {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log(formData);
+    try {
+      const response = await api.post("/interviews", formData);
+
+      navigate(`/interview/${response.data.interview._id}`);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
