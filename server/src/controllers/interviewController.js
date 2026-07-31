@@ -5,17 +5,17 @@ const {
 } = require("../services/geminiService");
 const createInterview = async (req, res) => {
   try {
-    const { company, role, type, difficulty } = req.body;
+    const { role, difficulty, numberOfQuestions } = req.body;
 
     const userId = req.user.id;
 
     // Create AI prompt
     const prompt = `
-Generate 10 ${difficulty} level ${type} interview questions
-for the role of ${role} at ${company}.
+    Generate ${numberOfQuestions} ${difficulty} level interview questions
+    for the role of ${role}.
 
-Return only the questions as a numbered list.
-`;
+    Return only the questions as a numbered list.
+    `;
 
     // Generate questions using Gemini
     const questions = await generateQuestions(prompt);
@@ -31,9 +31,7 @@ Return only the questions as a numbered list.
     // Create interview document
     const interview = new Interview({
       userId,
-      company,
       role,
-      type,
       difficulty,
       questions: questionArray,
     });

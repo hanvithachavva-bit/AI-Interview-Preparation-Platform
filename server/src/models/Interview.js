@@ -29,7 +29,7 @@ const interviewSchema = new mongoose.Schema(
         "Group Discussion",
         "Mixed",
       ],
-      required: true,
+      
     },
 
     difficulty: {
