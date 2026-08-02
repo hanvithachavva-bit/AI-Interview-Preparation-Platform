@@ -184,10 +184,12 @@ const deleteInterview = async (req, res) => {
 const submitAnswer = async (req, res) => {
   try {
     const interviewId = req.params.id;
-
     const { question, answer } = req.body;
-
     const userId = req.user.id;
+
+    console.log("Interview ID:", interviewId);
+    console.log("Question:", question);
+    console.log("Answer:", answer);
 
     const interview = await Interview.findOne({
       _id: interviewId,
@@ -200,7 +202,12 @@ const submitAnswer = async (req, res) => {
         message: "Interview not found",
       });
     }
+
+    console.log("Interview Found");
+
     const evaluation = await evaluateAnswer(question, answer);
+
+    console.log("Evaluation:", evaluation);
 
     interview.qa.push({
       question,
@@ -209,7 +216,20 @@ const submitAnswer = async (req, res) => {
       feedback: evaluation.feedback,
     });
 
-    await interview.save();
+    console.log("QA after push:", interview.qa);
+
+    const savedInterview = await interview.save();
+
+    console.log("Saved Interview:");
+    console.log(savedInterview);
+
+    const updatedInterview = await Interview.findById(interviewId);
+
+    console.log("Updated Interview:");
+    console.log(updatedInterview);
+    console.log("Updated QA:");
+    console.log(updatedInterview.qa);
+    console.log("Interview saved successfully");
 
     res.status(200).json({
       success: true,
@@ -218,6 +238,8 @@ const submitAnswer = async (req, res) => {
     });
 
   } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
