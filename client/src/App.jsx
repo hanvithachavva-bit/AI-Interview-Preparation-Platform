@@ -5,6 +5,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import CreateInterview from "./pages/CreateInterview";
 import Interview from "./pages/Interview";
+import InterviewResult from "./pages/InterviewResult";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -40,6 +42,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Interview />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/interview-result/:id"
+          element={
+            <ProtectedRoute>
+              <InterviewResult />
             </ProtectedRoute>
           }
         />

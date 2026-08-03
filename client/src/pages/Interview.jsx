@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 
 function Interview() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [answers, setAnswers] = useState([]);
+  const [score, setScore] = useState(null);
+  const [feedback, setFeedback] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   useEffect(() => {
     fetchInterview();
@@ -17,12 +22,50 @@ function Interview() {
       const response = await api.get(`/interviews/${id}`);
 
       console.log(response.data);
-
       setInterview(response.data.interview);
+
+      setAnswers(
+        new Array(response.data.interview.questions.length).fill("")
+      );
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
+    if (!answers[currentQuestion]?.trim()) {
+      alert("Please enter an answer before continuing.");
+      return;
+    }
+    try {
+      const response = await api.post(`/interviews/${id}/answer`, {
+        question: interview.questions[currentQuestion],
+        answer: answers[currentQuestion],
+      });
+
+      console.log(response.data);
+      setScore(response.data.interview.qa[currentQuestion].score);
+      setFeedback(response.data.interview.qa[currentQuestion].feedback);
+
+      if (currentQuestion < interview.questions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+        setScore(null);
+        setFeedback("");
+        
+      } else {
+        navigate(`/interview-result/${id}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+      
     }
   };
 
@@ -41,19 +84,62 @@ function Interview() {
       <hr />
 
       <h2>Role: {interview.role}</h2>
+
       <p>
         <strong>Difficulty:</strong> {interview.difficulty}
       </p>
 
-      <h3>Questions</h3>
+      <hr />
 
-      <ol>
-        {interview.questions.map((question, index) => (
-          <li key={index}>
-            {question}
-          </li>
-        ))}
-      </ol>
+      <h3>
+        Question {currentQuestion + 1} of {interview.questions.length}
+      </h3>
+
+      <p>{interview.questions[currentQuestion]}</p>
+
+      <textarea
+        rows="6"
+        cols="60"
+        placeholder="Type your answer here..."
+        value={answers[currentQuestion] || ""}
+        onChange={(e) => {
+          const updatedAnswers = [...answers];
+          updatedAnswers[currentQuestion] = e.target.value;
+          setAnswers(updatedAnswers);
+        }}
+      />
+
+      {score !== null && (
+        <div>
+          <h3>Evaluation</h3>
+
+          <p>
+            <strong>Score:</strong> {score}/10
+          </p>
+
+          <p>
+            <strong>Feedback:</strong> {feedback}
+          </p>
+        </div>
+      )}
+
+      <br />
+      <br />
+
+      <div style={{ display: "flex", gap: "10px" }}>
+        <button
+          onClick={handlePreviousQuestion}
+          disabled={currentQuestion === 0}
+        >
+          ← Previous Question
+        </button>
+
+        <button onClick={handleSubmitAnswer}>
+          {currentQuestion === interview.questions.length - 1
+            ? "Finish Interview 🎉"
+            : "Next Question →"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
+
 function CreateInterview() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     role: "",
     difficulty: "Easy",
@@ -24,6 +26,9 @@ function CreateInterview() {
     try {
       const response = await api.post("/interviews", formData);
 
+      console.log(response.data);
+
+      // Navigate to Interview page
       navigate(`/interview/${response.data.interview._id}`);
     } catch (error) {
       console.error(error);
