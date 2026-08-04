@@ -76,6 +76,8 @@ function Interview() {
   if (!interview) {
     return <h2>Interview not found.</h2>;
   }
+  const progress =
+    ((currentQuestion + 1) / interview.questions.length) * 100;
 
   return (
     <div>
@@ -88,6 +90,29 @@ function Interview() {
       <p>
         <strong>Difficulty:</strong> {interview.difficulty}
       </p>
+      <div
+        style={{
+        width: "100%",
+        backgroundColor: "#ddd",
+        borderRadius: "10px",
+        marginTop: "20px",
+        marginBottom: "10px",
+        }}
+      >
+        <div
+          style={{
+          width: `${progress}%`,
+          backgroundColor: "#4CAF50",
+          height: "12px",
+          borderRadius: "10px",
+          transition: "width 0.3s ease",
+        }}
+      ></div>
+    </div>
+
+    <p>
+      Progress: {currentQuestion + 1} / {interview.questions.length}
+    </p>
 
       <hr />
 
