@@ -12,6 +12,7 @@ function Interview() {
   const [score, setScore] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [markedQuestions, setMarkedQuestions] = useState([]);
 
   useEffect(() => {
     fetchInterview();
@@ -152,12 +153,11 @@ function Interview() {
       <br />
 
       <div style={{ display: "flex", gap: "10px" }}>
-        <button
-          onClick={handlePreviousQuestion}
-          disabled={currentQuestion === 0}
-        >
-          ← Previous Question
-        </button>
+        {currentQuestion > 0 && (
+          <button onClick={handlePreviousQuestion}>
+            ← Previous Question
+          </button>
+        )}
 
         <button onClick={handleSubmitAnswer}>
           {currentQuestion === interview.questions.length - 1
