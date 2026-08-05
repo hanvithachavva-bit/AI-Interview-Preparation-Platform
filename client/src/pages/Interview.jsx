@@ -13,7 +13,7 @@ function Interview() {
   const [feedback, setFeedback] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [markedQuestions, setMarkedQuestions] = useState([]);
-
+  
   useEffect(() => {
     fetchInterview();
   }, []);
@@ -23,10 +23,16 @@ function Interview() {
       const response = await api.get(`/interviews/${id}`);
 
       console.log(response.data);
-      setInterview(response.data.interview);
+      const interviewData = response.data.interview;
+
+      setInterview(interviewData);
 
       setAnswers(
-        new Array(response.data.interview.questions.length).fill("")
+        new Array(interviewData.questions.length).fill("")
+      );
+
+      setMarkedQuestions(
+        new Array(interviewData.questions.length).fill(false)
       );
     } catch (error) {
       console.error(error);
@@ -36,10 +42,7 @@ function Interview() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answers[currentQuestion]?.trim()) {
-      alert("Please enter an answer before continuing.");
-      return;
-    }
+    
     try {
       const response = await api.post(`/interviews/${id}/answer`, {
         question: interview.questions[currentQuestion],
@@ -68,6 +71,14 @@ function Interview() {
       setCurrentQuestion(currentQuestion - 1);
       
     }
+  };
+  const handleMarkForReview = () => {
+    const updatedMarkedQuestions = [...markedQuestions];
+
+    updatedMarkedQuestions[currentQuestion] =
+      !updatedMarkedQuestions[currentQuestion];
+
+    setMarkedQuestions(updatedMarkedQuestions);
   };
 
   if (loading) {
@@ -114,6 +125,44 @@ function Interview() {
     <p>
       Progress: {currentQuestion + 1} / {interview.questions.length}
     </p>
+    <div
+      style={{
+        display: "flex",
+        gap: "10px",
+        marginBottom: "20px",
+        marginTop: "20px",
+        flexWrap: "wrap",
+      }}
+    >
+      {interview.questions.map((_, index) => {
+        let backgroundColor = "#ccc";
+
+        if (markedQuestions[index]) {
+          backgroundColor = "orange";
+        } else if (answers[index].trim() !== "") {
+          backgroundColor = "green";
+        }
+
+        return (
+          <button
+            key={index}
+            onClick={() => setCurrentQuestion(index)}
+            style={{
+              width: "45px",
+              height: "45px",
+              borderRadius: "50%",
+              border: "none",
+              cursor: "pointer",
+              color: "white",
+              fontWeight: "bold",
+              backgroundColor,
+            }}
+          >
+            {index + 1}
+          </button>
+        );
+      })}
+    </div>
 
       <hr />
 
@@ -153,6 +202,11 @@ function Interview() {
       <br />
 
       <div style={{ display: "flex", gap: "10px" }}>
+        <button onClick={handleMarkForReview}>
+          {markedQuestions[currentQuestion]
+            ? "⭐ Remove Review"
+            : "⭐ Mark for Review"}
+        </button>
         {currentQuestion > 0 && (
           <button onClick={handlePreviousQuestion}>
             ← Previous Question
