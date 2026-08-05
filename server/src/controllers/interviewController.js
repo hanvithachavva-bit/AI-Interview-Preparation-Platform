@@ -202,10 +202,19 @@ const submitAnswer = async (req, res) => {
         message: "Interview not found",
       });
     }
+    if (interview.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Interview already completed",
+      });
+    }
 
     console.log("Interview Found");
 
-    const evaluation = await evaluateAnswer(question, answer);
+    const evaluation = {
+      score: 8,
+      feedback: "Good answer. This is a mock evaluation.",
+    };
 
     console.log("Evaluation:", evaluation);
 
@@ -216,10 +225,16 @@ const submitAnswer = async (req, res) => {
       feedback: evaluation.feedback,
     });
 
+// Mark interview as completed if all questions are answered
+    console.log("QA Length:", interview.qa.length);
+    console.log("Questions Length:", interview.questions.length);
+    if (interview.qa.length === interview.questions.length) {
+      console.log("Interview Completed!");
+      interview.status = "completed";
+    }
     console.log("QA after push:", interview.qa);
 
     const savedInterview = await interview.save();
-
     console.log("Saved Interview:");
     console.log(savedInterview);
 
