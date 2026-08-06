@@ -91,7 +91,7 @@ function Dashboard() {
             textAlign: "center",
           }}
         >
-          <h3>Total Interviews</h3>
+          <h3>📋 Total Interviews</h3>
           <h2>{totalInterviews}</h2>
         </div>
 
@@ -104,7 +104,7 @@ function Dashboard() {
             textAlign: "center",
           }}
         >
-          <h3>Completed</h3>
+          <h3>✅ Completed</h3>
           <h2>{completedInterviews}</h2>
         </div>
 
@@ -117,7 +117,7 @@ function Dashboard() {
             textAlign: "center",
           }}
         >
-          <h3>In Progress</h3>
+          <h3>⏳ In Progress</h3>
           <h2>{inProgressInterviews}</h2>
         </div>
       </div>
@@ -172,11 +172,26 @@ function Dashboard() {
                 <strong>Difficulty:</strong> {interview.difficulty}
               </p>
               <p>
-                <strong>Status:</strong> {interview.status}
+                <strong>Status:</strong>{" "}
+                <span
+                  style={{
+                    color:
+                      interview.status === "completed"
+                        ? "green"
+                        : "orange",
+                      fontWeight: "bold",
+                  }}
+                >
+                  {
+                    interview.status === "completed"
+                      ? "Completed"
+                      : "In Progress"
+                    }
+                </span>
               </p>
 
               <p>
-                <strong>Created:</strong>{" "}
+                <strong>📅 Created:</strong>{" "}
                 {new Date(interview.createdAt).toLocaleDateString()}
               </p>
               
@@ -186,13 +201,13 @@ function Dashboard() {
                   <button
                     onClick={() => navigate(`/interview-result/${interview._id}`)}
                   >
-                    View Result
+                    📄 View Result
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate(`/interview/${interview._id}`)}
                   >
-                    Continue Interview
+                    ▶ Continue Interview
                   </button>
                 )}
 
@@ -207,7 +222,7 @@ function Dashboard() {
                     cursor: "pointer",
                   }}
                 >
-                  Delete
+                  🗑 Delete
                 </button>
               </div>
             </div>
