@@ -59,6 +59,17 @@ function Interview() {
         setFeedback("");
         
       } else {
+        const unansweredQuestion = answers.findIndex(
+        (answer) => answer.trim() === ""
+        );
+
+        if (unansweredQuestion !== -1) {
+          alert("Please answer all questions before finishing the interview.");
+
+          setCurrentQuestion(unansweredQuestion);
+          return;
+        }
+
         navigate(`/interview-result/${id}`);
       }
     } catch (error) {
@@ -151,7 +162,10 @@ function Interview() {
               width: "45px",
               height: "45px",
               borderRadius: "50%",
-              border: "none",
+              border:
+                currentQuestion === index
+                ? "3px solid blue"
+                : "none",
               cursor: "pointer",
               color: "white",
               fontWeight: "bold",

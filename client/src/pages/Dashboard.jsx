@@ -6,6 +6,8 @@ function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [interviews, setInterviews] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
   const totalInterviews = interviews.length;
 
   const completedInterviews = interviews.filter(
@@ -13,8 +15,20 @@ function Dashboard() {
   ).length;
 
   const inProgressInterviews = interviews.filter(
+    
     (interview) => interview.status === "in-progress"
   ).length;
+  const filteredInterviews = interviews.filter((interview) => {
+    const matchesSearch = interview.role
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" ||
+      interview.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
   useEffect(() => {
     fetchInterviews();
   }, []);
@@ -26,6 +40,23 @@ function Dashboard() {
       console.log(response.data);
 
       setInterviews(response.data.interviews);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleDeleteInterview = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this interview?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/interviews/${id}`);
+
+      setInterviews(
+        interviews.filter((interview) => interview._id !== id)
+      );
     } catch (error) {
       console.error(error);
     }
@@ -94,11 +125,38 @@ function Dashboard() {
       <hr />
 
       <h3>Your Interviews</h3>
+      <input
+        type="text"
+        placeholder="🔍 Search by role..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          width: "300px",
+          padding: "10px",
+          marginTop: "10px",
+          marginBottom: "20px",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
+        }}
+      />
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        style={{
+          marginLeft: "15px",
+          padding: "10px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="All">All</option>
+        <option value="completed">Completed</option>
+        <option value="in-progress">In Progress</option>
+      </select>
 
-        {interviews.length === 0 ? (
+        {filteredInterviews.length === 0 ? (
           <p>No interviews found.</p>
         ) : (
-          interviews.map((interview) => (
+          filteredInterviews.map((interview) => (
             <div
               key={interview._id}
               style={{
@@ -118,19 +176,35 @@ function Dashboard() {
                 <strong>Status:</strong> {interview.status}
               </p>
 
-              {interview.status === "completed" ? (
-              <button
-                onClick={() => navigate(`/interview-result/${interview._id}`)}
-              >
-                View Result
-              </button>
-          ) : (
-            <button
-              onClick={() => navigate(`/interview/${interview._id}`)}
-            >
-              Continue Interview
-            </button>
-          )}
+              <div style={{ display: "flex", gap: "10px" }}>
+                {interview.status === "completed" ? (
+                  <button
+                    onClick={() => navigate(`/interview-result/${interview._id}`)}
+                  >
+                    View Result
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate(`/interview/${interview._id}`)}
+                  >
+                    Continue Interview
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleDeleteInterview(interview._id)}
+                  style={{
+                    backgroundColor: "red",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 12px",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}
