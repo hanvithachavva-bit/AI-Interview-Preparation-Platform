@@ -54,8 +54,8 @@ function Dashboard() {
     try {
       await api.delete(`/interviews/${id}`);
 
-      setInterviews(
-        interviews.filter((interview) => interview._id !== id)
+      setInterviews((prevInterviews) =>
+        prevInterviews.filter((interview) => interview._id !== id)
       );
     } catch (error) {
       console.error(error);
@@ -171,10 +171,15 @@ function Dashboard() {
               <p>
                 <strong>Difficulty:</strong> {interview.difficulty}
               </p>
-
               <p>
                 <strong>Status:</strong> {interview.status}
               </p>
+
+              <p>
+                <strong>Created:</strong>{" "}
+                {new Date(interview.createdAt).toLocaleDateString()}
+              </p>
+              
 
               <div style={{ display: "flex", gap: "10px" }}>
                 {interview.status === "completed" ? (
