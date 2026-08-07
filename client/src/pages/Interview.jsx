@@ -41,47 +41,58 @@ function Interview() {
     }
   };
 
-  const handleSubmitAnswer = async () => {
-    
-    try {
-      const response = await api.post(`/interviews/${id}/answer`, {
-        question: interview.questions[currentQuestion],
-        answer: answers[currentQuestion],
-      });
-
-      console.log(response.data);
-      setScore(response.data.interview.qa[currentQuestion].score);
-      setFeedback(response.data.interview.qa[currentQuestion].feedback);
-
-      if (currentQuestion < interview.questions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-        setScore(null);
-        setFeedback("");
-        
-      } else {
-        const unansweredQuestion = answers.findIndex(
+  const handleNextQuestion = () => {
+    if (currentQuestion < interview.questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setScore(null);
+      setFeedback("");
+    } else {
+      const unansweredQuestion = answers.findIndex(
         (answer) => answer.trim() === ""
-        );
+      );
 
-        if (unansweredQuestion !== -1) {
-          alert("Please answer all questions before finishing the interview.");
+      if (unansweredQuestion !== -1) {
+        alert("Please answer all questions before finishing the interview.");
 
-          setCurrentQuestion(unansweredQuestion);
-          return;
-        }
-
-        navigate(`/interview-result/${id}`);
+        setCurrentQuestion(unansweredQuestion);
+        return;
       }
-    } catch (error) {
-      console.error(error);
+
+      submitInterview();
     }
   };
-
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
       
     }
+  };
+  const submitInterview = async () => {
+    try {
+      const answersToSubmit = interview.questions.map((question, index) => ({
+        question,
+        answer: answers[index],
+      }));
+
+      const response = await api.post(
+        `/interviews/${id}/submit`,
+        {
+          answers: answersToSubmit,
+        }
+      );
+
+      console.log(response.data);
+
+      navigate(`/interview-result/${id}`);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleQuestionNavigation = (index) => {
+    setCurrentQuestion(index);
+
+    setScore(null);
+    setFeedback("");
   };
   const handleMarkForReview = () => {
     const updatedMarkedQuestions = [...markedQuestions];
@@ -157,7 +168,7 @@ function Interview() {
         return (
           <button
             key={index}
-            onClick={() => setCurrentQuestion(index)}
+            onClick={() => handleQuestionNavigation(index)}
             style={{
               width: "45px",
               height: "45px",
@@ -227,7 +238,7 @@ function Interview() {
           </button>
         )}
 
-        <button onClick={handleSubmitAnswer}>
+        <button onClick={handleNextQuestion}>
           {currentQuestion === interview.questions.length - 1
             ? "Finish Interview 🎉"
             : "Next Question →"}
