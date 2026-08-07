@@ -211,10 +211,10 @@ const submitAnswer = async (req, res) => {
 
     console.log("Interview Found");
 
-    const evaluation = {
-      score: 8,
-      feedback: "Good answer. This is a mock evaluation.",
-    };
+    const evaluation = await evaluateAnswer(
+      item.question,
+      item.answer
+    );
 
     console.log("Evaluation:", evaluation);
 
@@ -278,14 +278,41 @@ const submitInterview = async (req, res) => {
         message: "Interview not found",
       });
     }
+    if (interview.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Interview already completed",
+      });
+    }
 
-    console.log("Received Answers:");
-    console.log(answers);
+    interview.qa = [];
 
-    res.status(200).json({
-      success: true,
-      message: "Interview received successfully",
-    });
+      for (const item of answers) {
+
+        const evaluation = {
+          score: 8,
+          feedback: "Mock evaluation...",
+        };
+        console.log("Gemini Evaluation:");
+        console.log(evaluation);
+        
+
+        interview.qa.push({
+          question: item.question,
+          answer: item.answer,
+          score: evaluation.score,
+          feedback: evaluation.feedback,
+        });
+
+      }
+      interview.status = "completed";
+
+      await interview.save();
+      res.status(200).json({
+        success: true,
+        message: "Interview submitted successfully",
+        interview,
+      });
 
   } catch (error) {
     console.error(error);

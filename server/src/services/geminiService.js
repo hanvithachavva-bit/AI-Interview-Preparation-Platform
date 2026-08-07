@@ -12,7 +12,6 @@ async function generateQuestions(prompt) {
 
   console.dir(response, { depth: null });
 
-  // Different SDK versions return the text differently
   let text;
 
   if (typeof response.text === "function") {
@@ -43,13 +42,19 @@ ${question}
 Candidate Answer:
 ${answer}
 
-Evaluate the answer.
+Evaluate the candidate's answer.
 
-Return ONLY a valid JSON object in this format:
+Rules:
+- Give a score between 0 and 10.
+- Feedback should be short (maximum 2 sentences).
+- Explain briefly why the answer is right or wrong.
+- If the answer is unrelated or meaningless, give a score of 0.
+- Return ONLY valid JSON.
 
+Example:
 {
-  "score": 8,
-  "feedback": "Your feedback here"
+  "score": 7,
+  "feedback": "Good explanation, but you missed discussing event bubbling."
 }
 `;
 
@@ -60,7 +65,6 @@ Return ONLY a valid JSON object in this format:
 
   console.dir(response, { depth: null });
 
-  // Different SDK versions return the text differently
   let text;
 
   if (typeof response.text === "function") {
@@ -78,7 +82,6 @@ Return ONLY a valid JSON object in this format:
     throw new Error("Unable to extract evaluation from Gemini response.");
   }
 
-  // Remove markdown if Gemini returns ```json ... ```
   text = text
     .replace(/```json/g, "")
     .replace(/```/g, "")
@@ -87,9 +90,7 @@ Return ONLY a valid JSON object in this format:
   console.log("Gemini Response:");
   console.log(text);
 
-  const evaluation = JSON.parse(text);
-
-  return evaluation;
+  return JSON.parse(text);
 }
 
 module.exports = {
