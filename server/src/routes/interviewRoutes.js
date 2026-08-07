@@ -9,6 +9,7 @@ const {
   deleteInterview,
   updateInterview,
   submitAnswer,
+  submitInterview,
 } = require("../controllers/interviewController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -21,6 +22,7 @@ router.get("/:id", authMiddleware, getInterviewById);
 
 router.put("/:id", authMiddleware, updateInterview);
 router.post("/:id/answer", authMiddleware, submitAnswer);
+router.post("/:id/submit", authMiddleware, submitInterview);
 router.delete("/:id", authMiddleware, deleteInterview);
 
 module.exports = router;

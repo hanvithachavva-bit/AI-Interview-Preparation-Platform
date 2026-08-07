@@ -261,6 +261,41 @@ const submitAnswer = async (req, res) => {
     });
   }
 };
+const submitInterview = async (req, res) => {
+  try {
+    const interviewId = req.params.id;
+    const { answers } = req.body;
+    const userId = req.user.id;
+
+    const interview = await Interview.findOne({
+      _id: interviewId,
+      userId,
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    console.log("Received Answers:");
+    console.log(answers);
+
+    res.status(200).json({
+      success: true,
+      message: "Interview received successfully",
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 module.exports = {
   createInterview,
   getMyInterviews,
@@ -268,4 +303,5 @@ module.exports = {
   updateInterview,
   deleteInterview,
   submitAnswer,
+  submitInterview,
 };
