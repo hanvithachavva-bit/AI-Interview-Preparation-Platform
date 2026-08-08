@@ -7,6 +7,7 @@ function Register() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -17,13 +18,17 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("")
 
     try {
       const response = await api.post("/auth/register", formData);
 
       console.log(response.data);
     } catch (error) {
-      console.log(error.response?.data || error.message);
+      setError(
+        error.response?.data?.message ||
+        "Registration failed. Please try again."
+      );
     }
   };
 
@@ -63,6 +68,16 @@ function Register() {
 
       <br />
       <br />
+      {error && (
+        <p
+          style={{
+            color: "red",
+            fontWeight: "500",
+          }}
+        >
+          {error}
+        </p>
+    )}
 
       <button type="submit">
         Register

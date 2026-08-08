@@ -7,6 +7,7 @@ function Login() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
 
   const { setUser } = useAuth();
   const navigate = useNavigate();
@@ -22,27 +23,27 @@ function Login() {
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     try {
       const response = await api.post("/auth/login", formData);
-
-      // Save JWT token
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Save logged-in user in AuthContext
       setUser(response.data.user);
-      
-
       console.log(response.data);
       navigate("/dashboard");
     } catch (error) {
-      console.log(error.response?.data || error.message);
+      setError(
+        error.response?.data?.message ||
+        "Login failed. Please check your email and password."
+      );
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <h1>Login</h1>
+      <h2>Login</h2>
 
       <input
         type="email"
@@ -54,6 +55,16 @@ function Login() {
 
       <br />
       <br />
+      {error && (
+        <p
+          style={{
+            color: "red",
+            fontWeight: "500",
+          }}
+        >  
+          {error}
+        </p>
+      )}
 
       <input
         type="password"
@@ -67,6 +78,23 @@ function Login() {
       <br />
 
       <button type="submit">Login</button>
+
+      <p>
+        Don't have an account?{" "}
+        <button
+          type="button"
+          onClick={() => navigate("/register")}
+          style={{
+            border: "none",
+            background: "none",
+            color: "#2563eb",
+            cursor: "pointer",
+            fontWeight: "600",
+          }}
+        >
+          Register
+        </button>
+      </p>
     </form>
   );
 }

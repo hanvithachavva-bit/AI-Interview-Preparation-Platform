@@ -8,11 +8,13 @@ import Interview from "./pages/Interview";
 import InterviewResult from "./pages/InterviewResult";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from "./components/Navbar";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -23,7 +25,10 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <>
+                <Navbar />
+                <Dashboard />
+              </>
             </ProtectedRoute>
           }
         />
@@ -32,7 +37,10 @@ function App() {
           path="/create-interview"
           element={
             <ProtectedRoute>
-              <CreateInterview />
+              <>
+                <Navbar />
+                <CreateInterview />
+              </>
             </ProtectedRoute>
           }
         />
@@ -41,7 +49,10 @@ function App() {
           path="/interview/:id"
           element={
             <ProtectedRoute>
-              <Interview />
+              <>
+                <Navbar />
+                <Interview />
+              </>
             </ProtectedRoute>
           }
         />
@@ -50,10 +61,14 @@ function App() {
           path="/interview-result/:id"
           element={
             <ProtectedRoute>
-              <InterviewResult />
+              <>
+                <Navbar />
+                <InterviewResult />
+              </>
             </ProtectedRoute>
           }
         />
+
       </Routes>
     </BrowserRouter>
   );
