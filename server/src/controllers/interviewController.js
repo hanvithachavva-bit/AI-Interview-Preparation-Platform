@@ -2,6 +2,7 @@ const Interview = require("../models/Interview");
 const {
   generateQuestions,
   evaluateAnswer,
+  generateOverallAssessment,
 } = require("../services/geminiService");
 const createInterview = async (req, res) => {
   try {
@@ -34,6 +35,7 @@ const createInterview = async (req, res) => {
       role,
       difficulty,
       questions: questionArray,
+      startedAt: new Date(),
     });
 
     // Save to MongoDB
@@ -278,6 +280,7 @@ const submitInterview = async (req, res) => {
         message: "Interview not found",
       });
     }
+
     if (interview.status === "completed") {
       return res.status(400).json({
         success: false,
@@ -285,35 +288,73 @@ const submitInterview = async (req, res) => {
       });
     }
 
-    interview.qa = [];
+    // Evaluate all answers in parallel
+    const evaluations = await Promise.all(
+      answers.map(async (item) => {
+        console.log("Evaluating question:");
+        console.log(item.question);
 
-      for (const item of answers) {
+        console.log("Candidate answer:");
+        console.log(item.answer);
 
-        const evaluation = {
-          score: 8,
-          feedback: "Mock evaluation...",
-        };
+        const evaluation = await evaluateAnswer(
+          item.question,
+          item.answer
+        );
+
         console.log("Gemini Evaluation:");
         console.log(evaluation);
-        
 
-        interview.qa.push({
+        return {
           question: item.question,
           answer: item.answer,
           score: evaluation.score,
           feedback: evaluation.feedback,
-        });
+          strengths: evaluation.strengths,
+          improvements: evaluation.improvements,
+        };
+      })
+    );
 
-      }
-      interview.status = "completed";
+    // Save individual question evaluations
+    interview.qa = evaluations;
 
-      await interview.save();
-      res.status(200).json({
-        success: true,
-        message: "Interview submitted successfully",
-        interview,
-      });
+    // Generate overall AI assessment
+    console.log("Generating overall interview assessment...");
 
+    const overallAssessment =
+      await generateOverallAssessment(evaluations);
+
+    console.log("Overall Assessment:");
+    console.log(overallAssessment);
+
+    // Save overall assessment
+    interview.feedback = {
+      overallSummary: overallAssessment.overallSummary,
+      overallStrengths: overallAssessment.overallStrengths,
+      overallImprovements: overallAssessment.overallImprovements,
+      recommendation: overallAssessment.recommendation,
+    };
+
+    // Record interview end time
+    const endedAt = new Date();
+
+    // Calculate duration in seconds
+    const durationSeconds = Math.floor(
+      (endedAt - interview.startedAt) / 1000
+    );
+
+    interview.endedAt = endedAt;
+    interview.durationSeconds = durationSeconds;
+    interview.status = "completed";
+
+    await interview.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Interview submitted successfully",
+      interview,
+    });
   } catch (error) {
     console.error(error);
 

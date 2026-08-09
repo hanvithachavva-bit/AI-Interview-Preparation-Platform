@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const interviewSchema = new mongoose.Schema(
   {
     userId: {
@@ -29,7 +30,6 @@ const interviewSchema = new mongoose.Schema(
         "Group Discussion",
         "Mixed",
       ],
-      
     },
 
     difficulty: {
@@ -64,6 +64,7 @@ const interviewSchema = new mongoose.Schema(
     promptVersion: {
       type: String,
     },
+
     questions: [
       {
         type: String,
@@ -76,6 +77,8 @@ const interviewSchema = new mongoose.Schema(
         answer: String,
         score: Number,
         feedback: String,
+        strengths: String,
+        improvements: String,
       },
     ],
 
@@ -84,6 +87,11 @@ const interviewSchema = new mongoose.Schema(
       communicationScore: Number,
       confidenceScore: Number,
       recommendation: String,
+
+      // Overall AI assessment
+      overallSummary: String,
+      overallStrengths: String,
+      overallImprovements: String,
     },
 
     reportUrl: {
