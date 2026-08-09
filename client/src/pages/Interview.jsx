@@ -13,7 +13,8 @@ function Interview() {
   const [feedback, setFeedback] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [markedQuestions, setMarkedQuestions] = useState([]);
-
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   useEffect(() => {
     fetchInterview();
   }, []);
@@ -75,6 +76,9 @@ function Interview() {
 
   const submitInterview = async () => {
     try {
+      setSubmitting(true);
+      setSubmitError("");
+
       const answersToSubmit = interview.questions.map(
         (question, index) => ({
           question,
@@ -94,6 +98,13 @@ function Interview() {
       navigate(`/interview-result/${id}`);
     } catch (error) {
       console.error(error);
+
+      setSubmitError(
+        error.response?.data?.message ||
+        "Failed to submit interview. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -339,6 +350,11 @@ function Interview() {
               </p>
             </div>
           )}
+          {submitError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+              {submitError}
+            </div>
+   )}
 
           {/* Actions */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -368,10 +384,12 @@ function Interview() {
 
               <button
                 onClick={handleNextQuestion}
-                className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+                disabled={submitting}
+                className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {currentQuestion ===
-                interview.questions.length - 1
+                {submitting
+                  ? "Submitting..."
+                  : currentQuestion === interview.questions.length - 1
                   ? "Finish Interview 🎉"
                   : "Next Question →"}
               </button>

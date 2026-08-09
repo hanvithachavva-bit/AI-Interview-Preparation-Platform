@@ -10,6 +10,8 @@ function CreateInterview() {
     difficulty: "Easy",
     numberOfQuestions: 5,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Handle input changes
   const handleChange = (e) => {
@@ -23,15 +25,24 @@ function CreateInterview() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setError("");
+    setLoading(true);
+
     try {
       const response = await api.post("/interviews", formData);
 
       console.log(response.data);
 
-      // Navigate to Interview page
       navigate(`/interview/${response.data.interview._id}`);
     } catch (error) {
       console.error(error);
+
+      setError(
+        error.response?.data?.message ||
+        "Failed to generate interview. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,8 +95,23 @@ function CreateInterview() {
         </div>
 
         <br />
+        {error && (
+          <p
+            style={{
+              color: "red",
+              fontWeight: "500",
+           }}
+          >
+            {error}
+          </p>
+       )}
 
-        <button type="submit">Generate Interview</button>
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Generating..." : "Generate Interview"}
+        </button>
       </form>
     </div>
   );

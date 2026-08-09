@@ -10,9 +10,10 @@ function Dashboard() {
   const [interviews, setInterviews] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const totalInterviews = interviews.length;
-
+  const [deleteError, setDeleteError] = useState("");
   const completedInterviews = interviews.filter(
     (interview) => interview.status === "completed"
   ).length;
@@ -38,10 +39,20 @@ function Dashboard() {
 
   const fetchInterviews = async () => {
     try {
+      setError("");
+
       const response = await api.get("/interviews");
+
       setInterviews(response.data.interviews);
     } catch (error) {
       console.error(error);
+
+      setError(
+        error.response?.data?.message ||
+        "Failed to load interviews. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,6 +64,8 @@ function Dashboard() {
     if (!confirmDelete) return;
 
     try {
+      setDeleteError("");
+
       await api.delete(`/interviews/${id}`);
 
       setInterviews((prevInterviews) =>
@@ -60,8 +73,45 @@ function Dashboard() {
       );
     } catch (error) {
       console.error(error);
+
+      setDeleteError(
+        error.response?.data?.message ||
+        "Failed to delete interview. Please try again."
+      );
     }
   };
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-lg font-medium text-gray-600">
+          Loading interviews...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="font-semibold text-red-700">
+            {error}
+          </p>
+
+          <button
+            onClick={() => {
+              setLoading(true);
+              fetchInterviews();
+            }}
+            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-10">
@@ -176,6 +226,12 @@ function Dashboard() {
               <option value="in-progress">In Progress</option>
             </select>
           </div>
+          {/* Delete Error */}
+          {deleteError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+              {deleteError}
+            </div>
+          )}
 
           {/* Interview List */}
           {filteredInterviews.length === 0 ? (

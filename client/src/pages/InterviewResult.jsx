@@ -8,13 +8,15 @@ function InterviewResult() {
 
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState("");
   useEffect(() => {
     fetchInterview();
   }, []);
 
   const fetchInterview = async () => {
     try {
+      setError("");
+
       const response = await api.get(`/interviews/${id}`);
 
       console.log(response.data);
@@ -22,6 +24,11 @@ function InterviewResult() {
       setInterview(response.data.interview);
     } catch (error) {
       console.error(error);
+
+      setError(
+        error.response?.data?.message ||
+        "Failed to load interview results. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -33,6 +40,25 @@ function InterviewResult() {
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
           <p className="text-gray-600">Loading results...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+          <p className="text-lg font-semibold text-red-600">
+            {error}
+          </p>
+
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="mt-4 rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
+          >
+            Back to Dashboard
+          </button>
         </div>
       </div>
     );
