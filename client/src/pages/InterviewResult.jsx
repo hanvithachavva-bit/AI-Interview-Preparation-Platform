@@ -9,6 +9,7 @@ function InterviewResult() {
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   useEffect(() => {
     fetchInterview();
   }, []);
@@ -27,7 +28,7 @@ function InterviewResult() {
 
       setError(
         error.response?.data?.message ||
-        "Failed to load interview results. Please try again."
+          "Failed to load interview results. Please try again."
       );
     } finally {
       setLoading(false);
@@ -37,21 +38,18 @@ function InterviewResult() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-          <p className="text-gray-600">Loading results...</p>
-        </div>
+        <p className="text-lg font-medium text-gray-600">
+          Loading results...
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
         <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-          <p className="text-lg font-semibold text-red-600">
-            {error}
-          </p>
+          <p className="text-red-600">{error}</p>
 
           <button
             onClick={() => navigate("/dashboard")}
@@ -66,11 +64,9 @@ function InterviewResult() {
 
   if (!interview) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
         <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-          <p className="text-lg font-semibold text-gray-700">
-            Interview not found.
-          </p>
+          <p className="text-gray-700">Interview not found.</p>
 
           <button
             onClick={() => navigate("/dashboard")}
@@ -113,7 +109,7 @@ function InterviewResult() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-10">
+    <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
@@ -248,6 +244,29 @@ function InterviewResult() {
 
                   <p className="leading-relaxed text-gray-700">
                     {item.answer || "No answer provided."}
+                  </p>
+                </div>
+
+                {/* Strengths */}
+                <div className="mt-5 rounded-lg border border-green-100 bg-green-50 p-4">
+                  <p className="mb-2 text-sm font-semibold text-green-700">
+                    💪 What You Did Well
+                  </p>
+
+                  <p className="leading-relaxed text-gray-700">
+                    {item.strengths || "No specific strengths identified."}
+                  </p>
+                </div>
+
+                {/* Improvements */}
+                <div className="mt-5 rounded-lg border border-orange-100 bg-orange-50 p-4">
+                  <p className="mb-2 text-sm font-semibold text-orange-700">
+                    ⚠️ How to Improve
+                  </p>
+
+                  <p className="leading-relaxed text-gray-700">
+                    {item.improvements ||
+                      "No specific improvements identified."}
                   </p>
                 </div>
 
