@@ -12,8 +12,10 @@ function Dashboard() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const totalInterviews = interviews.length;
   const [deleteError, setDeleteError] = useState("");
+
+  const totalInterviews = interviews.length;
+
   const completedInterviews = interviews.filter(
     (interview) => interview.status === "completed"
   ).length;
@@ -21,6 +23,106 @@ function Dashboard() {
   const inProgressInterviews = interviews.filter(
     (interview) => interview.status === "in-progress"
   ).length;
+
+  // Only completed interviews with questions and answers
+  const completedInterviewData = interviews.filter(
+    (interview) =>
+      interview.status === "completed" &&
+      interview.questions?.length > 0 &&
+      interview.qa?.length > 0
+  );
+
+  // ================= AVERAGE SCORE =================
+
+  const averageScore =
+    completedInterviewData.length > 0
+      ? Math.round(
+          completedInterviewData.reduce((sum, interview) => {
+            const totalScore = interview.qa.reduce(
+              (qaSum, item) => qaSum + (item.score || 0),
+              0
+            );
+
+            const maximumScore = interview.questions.length * 10;
+
+            return (
+              sum +
+              (maximumScore > 0
+                ? (totalScore / maximumScore) * 100
+                : 0)
+            );
+          }, 0) / completedInterviewData.length
+        )
+      : 0;
+
+  // ================= BEST SCORE =================
+
+  const bestScore =
+    completedInterviewData.length > 0
+      ? Math.max(
+          ...completedInterviewData.map((interview) => {
+            const totalScore = interview.qa.reduce(
+              (sum, item) => sum + (item.score || 0),
+              0
+            );
+
+            const maximumScore = interview.questions.length * 10;
+
+            return maximumScore > 0
+              ? Math.round((totalScore / maximumScore) * 100)
+              : 0;
+          })
+        )
+      : 0;
+
+  // ================= AVERAGE DURATION =================
+
+  const averageDuration =
+    completedInterviewData.length > 0
+      ? Math.round(
+          completedInterviewData.reduce(
+            (sum, interview) =>
+              sum + (interview.durationSeconds || 0),
+            0
+          ) / completedInterviewData.length
+        )
+      : 0;
+
+  const averageMinutes = Math.floor(averageDuration / 60);
+  const averageSeconds = averageDuration % 60;
+
+  // ================= PERFORMANCE DATA =================
+
+  const performanceData = completedInterviewData
+    .map((interview) => {
+      const validScores = interview.qa.filter(
+        (item) => item.score !== undefined && item.score !== null
+      );
+
+      const totalScore = validScores.reduce(
+        (sum, item) => sum + Number(item.score || 0),
+        0
+      );
+
+      const maximumScore = validScores.length * 10;
+
+      const percentage =
+        maximumScore > 0
+          ? Math.round((totalScore / maximumScore) * 100)
+          : 0;
+
+      return {
+        id: interview._id,
+        role: interview.role,
+        percentage,
+        date: interview.createdAt,
+      };
+    })
+    .filter((interview) => interview.percentage > 0)
+    // Newest interview first
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // ================= FILTERED INTERVIEWS =================
 
   const filteredInterviews = interviews.filter((interview) => {
     const matchesSearch = interview.role
@@ -32,6 +134,8 @@ function Dashboard() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // ================= FETCH INTERVIEWS =================
 
   useEffect(() => {
     fetchInterviews();
@@ -49,12 +153,14 @@ function Dashboard() {
 
       setError(
         error.response?.data?.message ||
-        "Failed to load interviews. Please try again."
+          "Failed to load interviews. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
+
+  // ================= DELETE INTERVIEW =================
 
   const handleDeleteInterview = async (id) => {
     const confirmDelete = window.confirm(
@@ -69,17 +175,22 @@ function Dashboard() {
       await api.delete(`/interviews/${id}`);
 
       setInterviews((prevInterviews) =>
-        prevInterviews.filter((interview) => interview._id !== id)
+        prevInterviews.filter(
+          (interview) => interview._id !== id
+        )
       );
     } catch (error) {
       console.error(error);
 
       setDeleteError(
         error.response?.data?.message ||
-        "Failed to delete interview. Please try again."
+          "Failed to delete interview. Please try again."
       );
     }
   };
+
+  // ================= LOADING =================
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -89,6 +200,8 @@ function Dashboard() {
       </div>
     );
   }
+
+  // ================= ERROR =================
 
   if (error) {
     return (
@@ -109,15 +222,17 @@ function Dashboard() {
           </button>
         </div>
       </div>
-    
     );
   }
+
+  // ================= UI =================
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
 
-        {/* Header */}
+        {/* ================= HEADER ================= */}
+
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
@@ -137,8 +252,9 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* Statistics */}
-        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        {/* ================= STATISTICS ================= */}
+
+        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
           {/* Total */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -190,9 +306,149 @@ function Dashboard() {
               <div className="text-3xl">⏳</div>
             </div>
           </div>
+
+          {/* Average Score */}
+          <div className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600">
+                  Average Score
+                </p>
+
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  {averageScore}%
+                </p>
+              </div>
+
+              <div className="text-3xl">📊</div>
+            </div>
+          </div>
+
+          {/* Best Score */}
+          <div className="rounded-xl border border-purple-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600">
+                  Best Score
+                </p>
+
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  {bestScore}%
+                </p>
+              </div>
+
+              <div className="text-3xl">🏆</div>
+            </div>
+          </div>
+
+          {/* Average Duration */}
+          <div className="rounded-xl border border-indigo-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-indigo-600">
+                  Average Duration
+                </p>
+
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  {averageMinutes}m {averageSeconds}s
+                </p>
+              </div>
+
+              <div className="text-3xl">⏱️</div>
+            </div>
+          </div>
         </div>
 
-        {/* Interviews Section */}
+        {/* ================= PERFORMANCE OVERVIEW ================= */}
+
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+
+          <div className="mb-6">
+            <h3 className="text-2xl font-bold text-gray-900">
+              Performance Overview
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Track your performance across completed interviews.
+            </p>
+          </div>
+
+          {performanceData.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-300 py-10 text-center">
+              <div className="mb-3 text-4xl">📈</div>
+
+              <h4 className="text-lg font-semibold text-gray-700">
+                No performance data yet
+              </h4>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Complete an interview to see your performance here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {performanceData.map((item) => (
+                <div key={item.id}>
+
+                  {/* Role + Score */}
+                  <div className="mb-2 flex items-end justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-gray-800">
+                        {item.role}
+                      </p>
+
+                      {/* Date + Time */}
+                      <p className="mt-1 text-xs text-gray-500">
+                        {new Date(item.date).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`font-bold ${
+                        item.percentage >= 80
+                          ? "text-green-600"
+                          : item.percentage >= 60
+                          ? "text-blue-600"
+                          : item.percentage >= 40
+                          ? "text-orange-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {item.percentage}%
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        item.percentage >= 80
+                          ? "bg-green-500"
+                          : item.percentage >= 60
+                          ? "bg-blue-500"
+                          : item.percentage >= 40
+                          ? "bg-orange-500"
+                          : "bg-red-500"
+                      }`}
+                      style={{
+                        width: `${item.percentage}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ================= INTERVIEWS SECTION ================= */}
+
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
           <div className="mb-6">
@@ -226,6 +482,7 @@ function Dashboard() {
               <option value="in-progress">In Progress</option>
             </select>
           </div>
+
           {/* Delete Error */}
           {deleteError && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
@@ -254,6 +511,7 @@ function Dashboard() {
                   key={interview._id}
                   className="rounded-xl border border-gray-200 p-5 transition hover:border-blue-300 hover:shadow-md"
                 >
+
                   {/* Interview Header */}
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 
@@ -312,7 +570,9 @@ function Dashboard() {
                     ) : (
                       <button
                         onClick={() =>
-                          navigate(`/interview/${interview._id}`)
+                          navigate(
+                            `/interview/${interview._id}`
+                          )
                         }
                         className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
                       >
@@ -331,6 +591,7 @@ function Dashboard() {
                   </div>
                 </div>
               ))}
+
             </div>
           )}
         </div>

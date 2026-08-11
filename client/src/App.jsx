@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateInterview from "./pages/CreateInterview";
 import Interview from "./pages/Interview";
 import InterviewResult from "./pages/InterviewResult";
+import ResumeMatcher from "./pages/ResumeMatcher";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -15,12 +16,18 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* Public Routes */}
+        {/* ================= PUBLIC ROUTES ================= */}
+
         <Route path="/" element={<Login />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
+
+        {/* ================= PROTECTED ROUTES ================= */}
+
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -33,6 +40,8 @@ function App() {
           }
         />
 
+
+        {/* Create Interview */}
         <Route
           path="/create-interview"
           element={
@@ -45,6 +54,8 @@ function App() {
           }
         />
 
+
+        {/* Interview */}
         <Route
           path="/interview/:id"
           element={
@@ -57,6 +68,8 @@ function App() {
           }
         />
 
+
+        {/* Interview Result */}
         <Route
           path="/interview-result/:id"
           element={
@@ -64,6 +77,20 @@ function App() {
               <>
                 <Navbar />
                 <InterviewResult />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* Resume Matcher */}
+        <Route
+          path="/resume-matcher"
+          element={
+            <ProtectedRoute>
+              <>
+                <Navbar />
+                <ResumeMatcher />
               </>
             </ProtectedRoute>
           }

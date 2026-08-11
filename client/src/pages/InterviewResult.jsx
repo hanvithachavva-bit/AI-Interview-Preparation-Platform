@@ -91,6 +91,17 @@ function InterviewResult() {
       ? Math.round((totalScore / maximumScore) * 100)
       : 0;
 
+  // ================= PERFORMANCE BREAKDOWN =================
+
+  const questionsAnswered = interview.qa.length;
+
+  const averageScore =
+    questionsAnswered > 0
+      ? (totalScore / questionsAnswered).toFixed(1)
+      : "0.0";
+
+  // ================= PERFORMANCE MESSAGE =================
+
   let performance;
   let performanceStyle;
 
@@ -112,7 +123,8 @@ function InterviewResult() {
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-5xl">
 
-        {/* Header */}
+        {/* ================= HEADER ================= */}
+
         <div className="mb-8 rounded-xl bg-white p-6 text-center shadow-sm">
           <div className="mb-2 text-4xl">🎉</div>
 
@@ -125,9 +137,11 @@ function InterviewResult() {
           </p>
         </div>
 
-        {/* Interview Information */}
+        {/* ================= INTERVIEW INFORMATION ================= */}
+
         <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
                 {interview.role}
@@ -139,16 +153,29 @@ function InterviewResult() {
                   {interview.difficulty}
                 </span>
               </p>
+
+              {interview.durationSeconds > 0 && (
+                <p className="mt-2 text-gray-500">
+                  ⏱️ Duration:{" "}
+                  <span className="font-semibold text-gray-700">
+                    {Math.floor(interview.durationSeconds / 60)} min{" "}
+                    {interview.durationSeconds % 60} sec
+                  </span>
+                </p>
+              )}
             </div>
 
             <span className="w-fit rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
               Completed
             </span>
+
           </div>
         </div>
 
-        {/* Overall Score */}
+        {/* ================= OVERALL SCORE ================= */}
+
         <div className="mb-8 rounded-xl bg-white p-8 text-center shadow-sm">
+
           <p className="text-sm font-medium uppercase tracking-wide text-gray-500">
             Overall Score
           </p>
@@ -166,8 +193,11 @@ function InterviewResult() {
           </p>
 
           {/* Percentage */}
+
           <div className="mx-auto mt-6 max-w-xl">
+
             <div className="mb-2 flex justify-between text-sm">
+
               <span className="font-medium text-gray-600">
                 Performance
               </span>
@@ -175,9 +205,11 @@ function InterviewResult() {
               <span className="font-bold text-gray-800">
                 {percentage}%
               </span>
+
             </div>
 
             <div className="h-4 overflow-hidden rounded-full bg-gray-200">
+
               <div
                 className={`h-full rounded-full transition-all ${
                   percentage >= 80
@@ -190,24 +222,161 @@ function InterviewResult() {
                 }`}
                 style={{ width: `${percentage}%` }}
               ></div>
+
             </div>
           </div>
+
         </div>
 
-        {/* Question Results */}
+        {/* ================= PERFORMANCE BREAKDOWN ================= */}
+
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+
+          {/* Questions Answered */}
+
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+
+            <p className="text-sm font-medium uppercase tracking-wide text-gray-500">
+              Questions Answered
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {questionsAnswered}
+
+              <span className="text-lg text-gray-400">
+                {" "}
+                / {interview.questions.length}
+              </span>
+            </p>
+
+          </div>
+
+          {/* Average Score */}
+
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+
+            <p className="text-sm font-medium uppercase tracking-wide text-gray-500">
+              Average Score
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {averageScore}
+
+              <span className="text-lg text-gray-400">
+                {" "}
+                / 10
+              </span>
+            </p>
+
+          </div>
+
+          {/* Overall Percentage */}
+
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+
+            <p className="text-sm font-medium uppercase tracking-wide text-gray-500">
+              Overall Percentage
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-blue-600">
+              {percentage}%
+            </p>
+
+          </div>
+
+        </div>
+
+        {/* ================= OVERALL AI ASSESSMENT ================= */}
+
+        <div className="mb-8 rounded-xl border border-blue-100 bg-white p-6 shadow-sm">
+
+          <h2 className="mb-6 text-2xl font-bold text-gray-900">
+            🤖 Overall AI Assessment
+          </h2>
+
+          {/* Overall Summary */}
+
+          <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+
+            <p className="mb-2 text-sm font-semibold text-blue-700">
+              📊 Overall Performance
+            </p>
+
+            <p className="leading-relaxed text-gray-700">
+              {interview.feedback?.overallSummary ||
+                "No overall summary available."}
+            </p>
+
+          </div>
+
+          {/* Overall Strengths */}
+
+          <div className="mb-5 rounded-lg border border-green-100 bg-green-50 p-4">
+
+            <p className="mb-2 text-sm font-semibold text-green-700">
+              💪 Overall Strengths
+            </p>
+
+            <p className="leading-relaxed text-gray-700">
+              {interview.feedback?.overallStrengths ||
+                "No overall strengths identified."}
+            </p>
+
+          </div>
+
+          {/* Overall Improvements */}
+
+          <div className="mb-5 rounded-lg border border-orange-100 bg-orange-50 p-4">
+
+            <p className="mb-2 text-sm font-semibold text-orange-700">
+              ⚠️ Areas to Improve
+            </p>
+
+            <p className="leading-relaxed text-gray-700">
+              {interview.feedback?.overallImprovements ||
+                "No overall improvements identified."}
+            </p>
+
+          </div>
+
+          {/* Recommendation */}
+
+          <div className="rounded-lg border border-purple-100 bg-purple-50 p-4">
+
+            <p className="mb-2 text-sm font-semibold text-purple-700">
+              🎯 Recommendation
+            </p>
+
+            <p className="leading-relaxed text-gray-700">
+              {interview.feedback?.recommendation ||
+                "No recommendation available."}
+            </p>
+
+          </div>
+
+        </div>
+
+        {/* ================= QUESTION RESULTS ================= */}
+
         <div className="mb-8">
+
           <h2 className="mb-4 text-2xl font-bold text-gray-900">
             Question Results
           </h2>
 
           <div className="space-y-5">
+
             {interview.qa.map((item, index) => (
+
               <div
                 key={index}
                 className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
               >
+
                 {/* Question Header */}
+
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
                   <h3 className="text-lg font-bold text-gray-900">
                     Question {index + 1}
                   </h3>
@@ -223,10 +392,13 @@ function InterviewResult() {
                   >
                     {item.score}/10
                   </span>
+
                 </div>
 
                 {/* Question */}
+
                 <div className="mt-5">
+
                   <p className="mb-2 text-sm font-semibold text-gray-500">
                     Question
                   </p>
@@ -234,10 +406,13 @@ function InterviewResult() {
                   <p className="leading-relaxed text-gray-800">
                     {item.question}
                   </p>
+
                 </div>
 
                 {/* Answer */}
+
                 <div className="mt-5 rounded-lg bg-gray-50 p-4">
+
                   <p className="mb-2 text-sm font-semibold text-gray-500">
                     Your Answer
                   </p>
@@ -245,21 +420,28 @@ function InterviewResult() {
                   <p className="leading-relaxed text-gray-700">
                     {item.answer || "No answer provided."}
                   </p>
+
                 </div>
 
                 {/* Strengths */}
+
                 <div className="mt-5 rounded-lg border border-green-100 bg-green-50 p-4">
+
                   <p className="mb-2 text-sm font-semibold text-green-700">
                     💪 What You Did Well
                   </p>
 
                   <p className="leading-relaxed text-gray-700">
-                    {item.strengths || "No specific strengths identified."}
+                    {item.strengths ||
+                      "No specific strengths identified."}
                   </p>
+
                 </div>
 
                 {/* Improvements */}
+
                 <div className="mt-5 rounded-lg border border-orange-100 bg-orange-50 p-4">
+
                   <p className="mb-2 text-sm font-semibold text-orange-700">
                     ⚠️ How to Improve
                   </p>
@@ -268,10 +450,13 @@ function InterviewResult() {
                     {item.improvements ||
                       "No specific improvements identified."}
                   </p>
+
                 </div>
 
                 {/* Feedback */}
+
                 <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+
                   <p className="mb-2 text-sm font-semibold text-blue-700">
                     💡 Feedback
                   </p>
@@ -279,14 +464,20 @@ function InterviewResult() {
                   <p className="leading-relaxed text-gray-700">
                     {item.feedback}
                   </p>
+
                 </div>
+
               </div>
+
             ))}
+
           </div>
         </div>
 
-        {/* Bottom Buttons */}
+        {/* ================= BOTTOM BUTTONS ================= */}
+
         <div className="flex flex-col justify-center gap-3 pb-8 sm:flex-row">
+
           <button
             onClick={() => navigate("/dashboard")}
             className="rounded-lg border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-700 transition hover:bg-gray-100"
@@ -300,7 +491,9 @@ function InterviewResult() {
           >
             🔄 Create New Interview
           </button>
+
         </div>
+
       </div>
     </div>
   );

@@ -15,9 +15,24 @@ function Interview() {
   const [markedQuestions, setMarkedQuestions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [timerStartedAt, setTimerStartedAt] = useState(null);
   useEffect(() => {
     fetchInterview();
   }, []);
+  useEffect(() => {
+    if (!timerStartedAt) return;
+
+    const timer = setInterval(() => {
+      const elapsed = Math.floor(
+        (Date.now() - timerStartedAt) / 1000
+      );
+
+      setElapsedSeconds(elapsed);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timerStartedAt]);
 
   const fetchInterview = async () => {
     try {
@@ -28,6 +43,8 @@ function Interview() {
       const interviewData = response.data.interview;
 
       setInterview(interviewData);
+
+      setTimerStartedAt(Date.now());
 
       setAnswers(
         new Array(interviewData.questions.length).fill("")
@@ -122,6 +139,14 @@ function Interview() {
 
     setMarkedQuestions(updatedMarkedQuestions);
   };
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return `${String(minutes).padStart(2, "0")}:${String(
+      remainingSeconds
+    ).padStart(2, "0")}`;
+  };
 
   if (loading) {
     return (
@@ -191,6 +216,9 @@ function Interview() {
                   {interview.difficulty}
                 </span>
               </p>
+            </div>
+            <div className="rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+              ⏱️ Time: {formatTime(elapsedSeconds)}
             </div>
 
             <button
