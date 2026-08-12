@@ -20,28 +20,145 @@ const createInterview = async (req, res) => {
 
     const userId = req.user.id;
 
-    // Create AI prompt
-    const prompt = `
-Generate ${numberOfQuestions} ${difficulty} level interview questions
-for the role of ${role}.
+    // ================= CREATE AI PROMPT =================
 
-Return only the questions as a numbered list.
+    let typeInstruction = "";
+
+    switch (type) {
+      case "Technical":
+        typeInstruction = `
+Focus on technical questions related to the role.
+Test the candidate's technical knowledge, concepts,
+tools, technologies, and practical understanding.
+`;
+        break;
+
+      case "HR":
+        typeInstruction = `
+Focus on HR interview questions.
+Ask about motivation, career goals, strengths,
+weaknesses, company fit, communication, and professional goals.
+Do not generate technical questions.
+`;
+        break;
+
+      case "Behavioral":
+        typeInstruction = `
+Focus on behavioral interview questions.
+Ask about the candidate's past experiences,
+teamwork, leadership, conflict resolution,
+problem solving, challenges, failures, and achievements.
+Prefer questions that allow the candidate to explain real situations.
+Do not generate purely technical questions.
+`;
+        break;
+
+      case "Coding":
+        typeInstruction = `
+Focus on coding and problem-solving interview questions.
+Ask programming problems, algorithms, data structures,
+logic-building questions, debugging scenarios, and
+coding-related problem solving.
+Questions should be appropriate for the given role and difficulty.
+`;
+        break;
+
+      case "Panel":
+        typeInstruction = `
+Generate questions suitable for a panel interview.
+Include a realistic mixture of technical, behavioral,
+situational, and role-related questions.
+Questions should be suitable for multiple interviewers.
+`;
+        break;
+
+      case "Group Discussion":
+        typeInstruction = `
+Generate group discussion topics and questions.
+Focus on topics that allow the candidate to demonstrate
+communication, reasoning, teamwork, leadership,
+critical thinking, and the ability to express opinions.
+Do not generate normal technical interview questions.
+`;
+        break;
+
+      case "Mixed":
+        typeInstruction = `
+Generate a balanced mixture of technical, HR,
+behavioral, and role-specific questions.
+The questions should cover different aspects of the candidate's
+interview preparation rather than focusing only on technical knowledge.
+`;
+        break;
+
+      default:
+        typeInstruction = `
+Generate questions appropriate for the specified interview type.
+`;
+    }
+
+    const prompt = `
+You are an expert interviewer conducting a ${type || "Technical"} interview.
+
+Job Role:
+${role}
+
+Company:
+${company || "Not specified"}
+
+Difficulty:
+${difficulty}
+
+Number of Questions:
+${numberOfQuestions}
+
+Interview Type:
+${type || "Technical"}
+
+${typeInstruction}
+
+Generate exactly ${numberOfQuestions} interview questions.
+
+Important rules:
+
+- Questions must match the selected interview type.
+- Questions must match the job role.
+- Questions must match the requested difficulty.
+- Do not generate questions from another interview type unless the selected type is "Mixed" or "Panel".
+- Avoid duplicate questions.
+- Keep questions clear and suitable for an interview.
+- Return only the questions as a numbered list.
+- Do not include answers.
+- Do not include explanations.
+- Do not include headings.
+
+Example format:
+
+1. First question
+2. Second question
+3. Third question
 `;
 
-    // Generate questions using Gemini
+    // ================= GENERATE QUESTIONS =================
+
     const questions = await generateQuestions(prompt);
 
-    // Convert response into an array
+    // ================= CONVERT RESPONSE TO ARRAY =================
+
     const questionArray = questions
       .split("\n")
       .map((question) =>
-        question.replace(/^\d+\.\s*/, "").trim()
+        question
+          .replace(/^\s*\d+[\.\)]\s*/, "")
+          .trim()
       )
       .filter((question) => question !== "");
 
-    console.log(questionArray);
+    console.log("Interview Type:", type);
+    console.log("Generated Questions:", questionArray);
 
-    // Create interview document
+    // ================= CREATE INTERVIEW DOCUMENT =================
+
     const interview = new Interview({
       userId,
       company,
@@ -52,7 +169,8 @@ Return only the questions as a numbered list.
       startedAt: new Date(),
     });
 
-    // Save to MongoDB
+    // ================= SAVE TO MONGODB =================
+
     await interview.save();
 
     res.status(201).json({
@@ -244,10 +362,17 @@ const submitAnswer = async (req, res) => {
     });
 
     // Mark interview as completed if all questions are answered
-    console.log("QA Length:", interview.qa.length);
-    console.log("Questions Length:", interview.questions.length);
 
-    if (interview.qa.length === interview.questions.length) {
+    console.log("QA Length:", interview.qa.length);
+    console.log(
+      "Questions Length:",
+      interview.questions.length
+    );
+
+    if (
+      interview.qa.length ===
+      interview.questions.length
+    ) {
       console.log("Interview Completed!");
       interview.status = "completed";
     }
@@ -259,9 +384,8 @@ const submitAnswer = async (req, res) => {
     console.log("Saved Interview:");
     console.log(savedInterview);
 
-    const updatedInterview = await Interview.findById(
-      interviewId
-    );
+    const updatedInterview =
+      await Interview.findById(interviewId);
 
     console.log("Updated Interview:");
     console.log(updatedInterview);
@@ -313,7 +437,8 @@ const submitInterview = async (req, res) => {
       });
     }
 
-    // Evaluate all answers in parallel
+    // ================= EVALUATE ALL ANSWERS =================
+
     const evaluations = await Promise.all(
       answers.map(async (item) => {
         console.log("Evaluating question:");
@@ -341,21 +466,26 @@ const submitInterview = async (req, res) => {
       })
     );
 
-    // Save individual question evaluations
+    // ================= SAVE QUESTION EVALUATIONS =================
+
     interview.qa = evaluations;
 
-    // Generate overall AI assessment
+    // ================= GENERATE OVERALL ASSESSMENT =================
+
     console.log(
       "Generating overall interview assessment..."
     );
 
     const overallAssessment =
-      await generateOverallAssessment(evaluations);
+      await generateOverallAssessment(
+        evaluations
+      );
 
     console.log("Overall Assessment:");
     console.log(overallAssessment);
 
-    // Save overall assessment
+    // ================= SAVE OVERALL ASSESSMENT =================
+
     interview.feedback = {
       overallSummary:
         overallAssessment.overallSummary,
@@ -370,10 +500,10 @@ const submitInterview = async (req, res) => {
         overallAssessment.recommendation,
     };
 
-    // Record interview end time
+    // ================= RECORD END TIME =================
+
     const endedAt = new Date();
 
-    // Calculate duration in seconds
     const durationSeconds = Math.floor(
       (endedAt - interview.startedAt) / 1000
     );
@@ -381,6 +511,8 @@ const submitInterview = async (req, res) => {
     interview.endedAt = endedAt;
     interview.durationSeconds = durationSeconds;
     interview.status = "completed";
+
+    // ================= SAVE INTERVIEW =================
 
     await interview.save();
 
@@ -398,6 +530,8 @@ const submitInterview = async (req, res) => {
     });
   }
 };
+
+// ================= EXPORT =================
 
 module.exports = {
   createInterview,
