@@ -8,11 +8,10 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const [interviews, setInterviews] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [deleteError, setDeleteError] = useState("");
+
+  // ================= STATISTICS =================
 
   const totalInterviews = interviews.length;
 
@@ -119,21 +118,7 @@ function Dashboard() {
       };
     })
     .filter((interview) => interview.percentage > 0)
-    // Newest interview first
     .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  // ================= FILTERED INTERVIEWS =================
-
-  const filteredInterviews = interviews.filter((interview) => {
-    const matchesSearch = interview.role
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "All" || interview.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
 
   // ================= FETCH INTERVIEWS =================
 
@@ -160,42 +145,13 @@ function Dashboard() {
     }
   };
 
-  // ================= DELETE INTERVIEW =================
-
-  const handleDeleteInterview = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this interview?"
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      setDeleteError("");
-
-      await api.delete(`/interviews/${id}`);
-
-      setInterviews((prevInterviews) =>
-        prevInterviews.filter(
-          (interview) => interview._id !== id
-        )
-      );
-    } catch (error) {
-      console.error(error);
-
-      setDeleteError(
-        error.response?.data?.message ||
-          "Failed to delete interview. Please try again."
-      );
-    }
-  };
-
   // ================= LOADING =================
 
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-lg font-medium text-gray-600">
-          Loading interviews...
+          Loading dashboard...
         </p>
       </div>
     );
@@ -256,7 +212,8 @@ function Dashboard() {
 
         <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
-          {/* Total */}
+          {/* Total Interviews */}
+
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -274,6 +231,7 @@ function Dashboard() {
           </div>
 
           {/* Completed */}
+
           <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -291,6 +249,7 @@ function Dashboard() {
           </div>
 
           {/* In Progress */}
+
           <div className="rounded-xl border border-orange-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -308,6 +267,7 @@ function Dashboard() {
           </div>
 
           {/* Average Score */}
+
           <div className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -325,6 +285,7 @@ function Dashboard() {
           </div>
 
           {/* Best Score */}
+
           <div className="rounded-xl border border-purple-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -342,6 +303,7 @@ function Dashboard() {
           </div>
 
           {/* Average Duration */}
+
           <div className="rounded-xl border border-indigo-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -391,13 +353,13 @@ function Dashboard() {
                 <div key={item.id}>
 
                   {/* Role + Score */}
+
                   <div className="mb-2 flex items-end justify-between gap-4">
                     <div>
                       <p className="font-semibold text-gray-800">
                         {item.role}
                       </p>
 
-                      {/* Date + Time */}
                       <p className="mt-1 text-xs text-gray-500">
                         {new Date(item.date).toLocaleString("en-IN", {
                           day: "2-digit",
@@ -425,6 +387,7 @@ function Dashboard() {
                   </div>
 
                   {/* Progress Bar */}
+
                   <div className="h-3 overflow-hidden rounded-full bg-gray-200">
                     <div
                       className={`h-full rounded-full transition-all ${
@@ -447,154 +410,74 @@ function Dashboard() {
           )}
         </div>
 
-        {/* ================= INTERVIEWS SECTION ================= */}
+        {/* ================= QUICK ACTIONS ================= */}
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
-          <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900">
-              Your Interviews
-            </h3>
+          <h3 className="text-2xl font-bold text-gray-900">
+            Quick Actions
+          </h3>
 
-            <p className="mt-1 text-sm text-gray-500">
-              View and manage your interview sessions.
-            </p>
-          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Quickly access the main features of your interview platform.
+          </p>
 
-          {/* Search + Filter */}
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-            <input
-              type="text"
-              placeholder="🔍 Search by role..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 sm:max-w-md"
-            />
+            {/* Create Interview */}
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            <button
+              onClick={() => navigate("/create-interview")}
+              className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-left transition hover:border-blue-400 hover:bg-blue-100"
             >
-              <option value="All">All Status</option>
-              <option value="completed">Completed</option>
-              <option value="in-progress">In Progress</option>
-            </select>
-          </div>
+              <div className="text-3xl">🎯</div>
 
-          {/* Delete Error */}
-          {deleteError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
-              {deleteError}
-            </div>
-          )}
-
-          {/* Interview List */}
-          {filteredInterviews.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
-              <div className="mb-3 text-4xl">📭</div>
-
-              <h4 className="text-lg font-semibold text-gray-700">
-                No interviews found
+              <h4 className="mt-3 font-semibold text-gray-900">
+                Create Interview
               </h4>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Try changing your search or create a new interview.
+              <p className="mt-1 text-sm text-gray-600">
+                Start a new AI-powered mock interview.
               </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
+            </button>
 
-              {filteredInterviews.map((interview) => (
-                <div
-                  key={interview._id}
-                  className="rounded-xl border border-gray-200 p-5 transition hover:border-blue-300 hover:shadow-md"
-                >
+            {/* My Interviews */}
 
-                  {/* Interview Header */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <button
+              onClick={() => navigate("/interviews")}
+              className="rounded-xl border border-purple-200 bg-purple-50 p-5 text-left transition hover:border-purple-400 hover:bg-purple-100"
+            >
+              <div className="text-3xl">📋</div>
 
-                    <div>
-                      <h4 className="text-xl font-semibold text-gray-900">
-                        {interview.role}
-                      </h4>
+              <h4 className="mt-3 font-semibold text-gray-900">
+                My Interviews
+              </h4>
 
-                      <p className="mt-1 text-sm text-gray-500">
-                        📅 Created{" "}
-                        {new Date(
-                          interview.createdAt
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
+              <p className="mt-1 text-sm text-gray-600">
+                View and manage all your interview sessions.
+              </p>
+            </button>
 
-                    {/* Status */}
-                    <span
-                      className={`w-fit rounded-full px-3 py-1 text-sm font-semibold ${
-                        interview.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-orange-100 text-orange-700"
-                      }`}
-                    >
-                      {interview.status === "completed"
-                        ? "Completed"
-                        : "In Progress"}
-                    </span>
-                  </div>
+            {/* Resume Matcher */}
 
-                  {/* Details */}
-                  <div className="mt-4">
-                    <span className="text-sm text-gray-500">
-                      Difficulty
-                    </span>
+            <button
+              onClick={() => navigate("/resume-matcher")}
+              className="rounded-xl border border-green-200 bg-green-50 p-5 text-left transition hover:border-green-400 hover:bg-green-100"
+            >
+              <div className="text-3xl">📄</div>
 
-                    <p className="font-medium capitalize text-gray-800">
-                      {interview.difficulty}
-                    </p>
-                  </div>
+              <h4 className="mt-3 font-semibold text-gray-900">
+                Resume Matcher
+              </h4>
 
-                  {/* Buttons */}
-                  <div className="mt-5 flex flex-wrap gap-3">
+              <p className="mt-1 text-sm text-gray-600">
+                Compare your resume with a job description.
+              </p>
+            </button>
 
-                    {interview.status === "completed" ? (
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/interview-result/${interview._id}`
-                          )
-                        }
-                        className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
-                      >
-                        📄 View Result
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/interview/${interview._id}`
-                          )
-                        }
-                        className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
-                      >
-                        ▶ Continue Interview
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() =>
-                        handleDeleteInterview(interview._id)
-                      }
-                      className="rounded-lg border border-red-300 px-4 py-2 font-medium text-red-600 transition hover:bg-red-50"
-                    >
-                      🗑 Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-            </div>
-          )}
+          </div>
         </div>
+
       </div>
     </div>
   );

@@ -9,17 +9,21 @@ function Interview() {
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState([]);
-  const [score, setScore] = useState(null);
-  const [feedback, setFeedback] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [markedQuestions, setMarkedQuestions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState(null);
+
+  // ================= FETCH INTERVIEW =================
+
   useEffect(() => {
     fetchInterview();
-  }, []);
+  }, [id]);
+
+  // ================= TIMER =================
+
   useEffect(() => {
     if (!timerStartedAt) return;
 
@@ -34,8 +38,12 @@ function Interview() {
     return () => clearInterval(timer);
   }, [timerStartedAt]);
 
+  // ================= GET INTERVIEW =================
+
   const fetchInterview = async () => {
     try {
+      setLoading(true);
+
       const response = await api.get(`/interviews/${id}`);
 
       console.log(response.data);
@@ -44,7 +52,12 @@ function Interview() {
 
       setInterview(interviewData);
 
-      setTimerStartedAt(Date.now());
+      // Use the actual interview start time if available
+      const startTime = interviewData.startedAt
+        ? new Date(interviewData.startedAt).getTime()
+        : Date.now();
+
+      setTimerStartedAt(startTime);
 
       setAnswers(
         new Array(interviewData.questions.length).fill("")
@@ -54,42 +67,45 @@ function Interview() {
         new Array(interviewData.questions.length).fill(false)
       );
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load interview:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  // ================= NEXT QUESTION =================
+
   const handleNextQuestion = () => {
     if (currentQuestion < interview.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
-      setScore(null);
-      setFeedback("");
-    } else {
-      const unansweredQuestion = answers.findIndex(
-        (answer) => answer.trim() === ""
+      return;
+    }
+
+    const unansweredQuestion = answers.findIndex(
+      (answer) => answer.trim() === ""
+    );
+
+    if (unansweredQuestion !== -1) {
+      alert(
+        "Please answer all questions before finishing the interview."
       );
 
-      if (unansweredQuestion !== -1) {
-        alert(
-          "Please answer all questions before finishing the interview."
-        );
-
-        setCurrentQuestion(unansweredQuestion);
-        return;
-      }
-
-      submitInterview();
+      setCurrentQuestion(unansweredQuestion);
+      return;
     }
+
+    submitInterview();
   };
+
+  // ================= PREVIOUS QUESTION =================
 
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
-      setScore(null);
-      setFeedback("");
     }
   };
+
+  // ================= SUBMIT INTERVIEW =================
 
   const submitInterview = async () => {
     try {
@@ -110,26 +126,28 @@ function Interview() {
         }
       );
 
-      console.log(response.data);
+      console.log("Interview submitted:", response.data);
 
       navigate(`/interview-result/${id}`);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to submit interview:", error);
 
       setSubmitError(
         error.response?.data?.message ||
-        "Failed to submit interview. Please try again."
+          "Failed to submit interview. Please try again."
       );
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ================= QUESTION NAVIGATION =================
+
   const handleQuestionNavigation = (index) => {
     setCurrentQuestion(index);
-    setScore(null);
-    setFeedback("");
   };
+
+  // ================= MARK FOR REVIEW =================
 
   const handleMarkForReview = () => {
     const updatedMarkedQuestions = [...markedQuestions];
@@ -139,6 +157,9 @@ function Interview() {
 
     setMarkedQuestions(updatedMarkedQuestions);
   };
+
+  // ================= FORMAT TIMER =================
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -147,6 +168,8 @@ function Interview() {
       remainingSeconds
     ).padStart(2, "0")}`;
   };
+
+  // ================= LOADING =================
 
   if (loading) {
     return (
@@ -162,9 +185,11 @@ function Interview() {
     );
   }
 
+  // ================= NOT FOUND =================
+
   if (!interview) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="rounded-xl bg-white p-8 text-center shadow-sm">
           <p className="text-lg font-semibold text-gray-700">
             Interview not found.
@@ -181,10 +206,12 @@ function Interview() {
     );
   }
 
+  // ================= CALCULATIONS =================
+
+  const totalQuestions = interview.questions.length;
+
   const progress =
-    ((currentQuestion + 1) /
-      interview.questions.length) *
-    100;
+    ((currentQuestion + 1) / totalQuestions) * 100;
 
   const answeredCount = answers.filter(
     (answer) => answer.trim() !== ""
@@ -198,9 +225,11 @@ function Interview() {
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-5xl">
 
-        {/* Header */}
+        {/* ================= HEADER ================= */}
+
         <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
             <div>
               <p className="text-sm font-medium text-blue-600">
                 AI Interview
@@ -210,27 +239,47 @@ function Interview() {
                 {interview.role}
               </h1>
 
-              <p className="mt-1 text-gray-500">
-                Difficulty:{" "}
-                <span className="font-semibold capitalize text-gray-700">
-                  {interview.difficulty}
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500">
+                <span>
+                  Company:{" "}
+                  <strong className="text-gray-700">
+                    {interview.company || "Not specified"}
+                  </strong>
                 </span>
-              </p>
-            </div>
-            <div className="rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-              ⏱️ Time: {formatTime(elapsedSeconds)}
+
+                <span>
+                  Type:{" "}
+                  <strong className="text-gray-700">
+                    {interview.type || "Not specified"}
+                  </strong>
+                </span>
+
+                <span>
+                  Difficulty:{" "}
+                  <strong className="capitalize text-gray-700">
+                    {interview.difficulty}
+                  </strong>
+                </span>
+              </div>
             </div>
 
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="w-fit rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
-            >
-              ← Dashboard
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="rounded-lg bg-blue-50 px-4 py-2 text-center text-sm font-semibold text-blue-700">
+                ⏱️ Time: {formatTime(elapsedSeconds)}
+              </div>
+
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              >
+                ← Dashboard
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Progress Section */}
+        {/* ================= PROGRESS ================= */}
+
         <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-600">
@@ -238,8 +287,7 @@ function Interview() {
             </span>
 
             <span className="text-sm font-bold text-gray-800">
-              {currentQuestion + 1} /{" "}
-              {interview.questions.length}
+              {currentQuestion + 1} / {totalQuestions}
             </span>
           </div>
 
@@ -258,7 +306,7 @@ function Interview() {
               <strong className="text-green-600">
                 {answeredCount}
               </strong>
-              /{interview.questions.length}
+              /{totalQuestions}
             </span>
 
             <span>
@@ -270,7 +318,8 @@ function Interview() {
           </div>
         </div>
 
-        {/* Question Navigator */}
+        {/* ================= QUESTION NAVIGATOR ================= */}
+
         <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-bold text-gray-900">
             Questions
@@ -297,6 +346,7 @@ function Interview() {
               return (
                 <button
                   key={index}
+                  type="button"
                   onClick={() =>
                     handleQuestionNavigation(index)
                   }
@@ -310,19 +360,23 @@ function Interview() {
 
           <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">
             <span>⚪ Not answered</span>
+
             <span className="text-green-600">
               🟢 Answered
             </span>
+
             <span className="text-orange-500">
               🟠 Marked for review
             </span>
+
             <span className="text-blue-600">
               🔵 Current
             </span>
           </div>
         </div>
 
-        {/* Current Question */}
+        {/* ================= CURRENT QUESTION ================= */}
+
         <div className="rounded-xl bg-white p-6 shadow-sm sm:p-8">
 
           <div className="mb-6">
@@ -335,7 +389,8 @@ function Interview() {
             </h2>
           </div>
 
-          {/* Answer */}
+          {/* ================= ANSWER ================= */}
+
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-700">
               Your Answer
@@ -361,33 +416,20 @@ function Interview() {
             </div>
           </div>
 
-          {/* Evaluation */}
-          {score !== null && (
-            <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
-              <h3 className="mb-3 text-lg font-bold text-blue-800">
-                🤖 AI Evaluation
-              </h3>
+          {/* ================= SUBMIT ERROR ================= */}
 
-              <p className="mb-2 text-gray-700">
-                <strong>Score:</strong> {score}/10
-              </p>
-
-              <p className="text-gray-700">
-                <strong>Feedback:</strong>{" "}
-                {feedback}
-              </p>
+          {submitError && (
+            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+              ⚠️ {submitError}
             </div>
           )}
-          {submitError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
-              {submitError}
-            </div>
-   )}
 
-          {/* Actions */}
+          {/* ================= ACTIONS ================= */}
+
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
             <button
+              type="button"
               onClick={handleMarkForReview}
               className={`rounded-lg px-5 py-3 font-semibold transition ${
                 markedQuestions[currentQuestion]
@@ -401,8 +443,10 @@ function Interview() {
             </button>
 
             <div className="flex flex-col gap-3 sm:flex-row">
+
               {currentQuestion > 0 && (
                 <button
+                  type="button"
                   onClick={handlePreviousQuestion}
                   className="rounded-lg border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-100"
                 >
@@ -411,13 +455,14 @@ function Interview() {
               )}
 
               <button
+                type="button"
                 onClick={handleNextQuestion}
                 disabled={submitting}
                 className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting
                   ? "Submitting..."
-                  : currentQuestion === interview.questions.length - 1
+                  : currentQuestion === totalQuestions - 1
                   ? "Finish Interview 🎉"
                   : "Next Question →"}
               </button>
@@ -425,9 +470,11 @@ function Interview() {
           </div>
         </div>
 
-        {/* Bottom Reminder */}
+        {/* ================= REMINDER ================= */}
+
         <div className="mt-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-          💡 <strong>Tip:</strong> You can use the question
+          💡{" "}
+          <strong>Tip:</strong> You can use the question
           numbers above to move between questions and mark
           questions for review.
         </div>

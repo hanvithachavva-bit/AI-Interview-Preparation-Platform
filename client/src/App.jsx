@@ -10,7 +10,7 @@ import ResumeMatcher from "./pages/ResumeMatcher";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
-
+import Interviews from "./pages/Interviews";
 function App() {
   return (
     <BrowserRouter>
@@ -81,8 +81,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-
         {/* Resume Matcher */}
         <Route
           path="/resume-matcher"
@@ -96,6 +94,18 @@ function App() {
           }
         />
 
+        {/* My Interviews */}
+        <Route
+          path="/interviews"
+          element={
+            <ProtectedRoute>
+              <>
+                <Navbar />
+                <Interviews />
+              </>
+            </ProtectedRoute>
+          }
+       />    
       </Routes>
     </BrowserRouter>
   );

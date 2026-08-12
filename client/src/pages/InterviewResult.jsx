@@ -147,12 +147,28 @@ function InterviewResult() {
                 {interview.role}
               </h2>
 
-              <p className="mt-1 text-gray-500">
-                Difficulty:{" "}
-                <span className="font-semibold capitalize text-gray-700">
-                  {interview.difficulty}
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500">
+                <span>
+                  Company:{" "}
+                  <span className="font-semibold text-gray-700">
+                    {interview.company || "Not specified"}
+                   </span>
                 </span>
-              </p>
+
+                <span>
+                  Interview Type:{" "}
+                  <span className="font-semibold text-gray-700">
+                    {interview.type || "Not specified"}
+                  </span>
+                </span>
+
+                <span>
+                  Difficulty:{" "}
+                  <span className="font-semibold capitalize text-gray-700">
+                    {interview.difficulty}
+                  </span>
+                </span>
+              </div>
 
               {interview.durationSeconds > 0 && (
                 <p className="mt-2 text-gray-500">
