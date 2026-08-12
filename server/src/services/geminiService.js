@@ -317,8 +317,10 @@ Return exactly this format:
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
-
   console.dir(response, { depth: null });
 
   let text;
@@ -345,7 +347,7 @@ Return exactly this format:
     .replace(/```/g, "")
     .trim();
 
-  console.log("Gemini Overall Assessment:");
+  console.log("Gemini Response:");
   console.log(text);
 
   const assessment = JSON.parse(text);
@@ -356,11 +358,11 @@ Return exactly this format:
     overallImprovements: assessment.overallImprovements,
     recommendation: assessment.recommendation,
   };
-}
+  }
 
-module.exports = {
-  generateQuestions,
-  evaluateAnswer,
-  generateOverallAssessment,
-  analyzeResume,
-};
+  module.exports = {
+    generateQuestions,
+    evaluateAnswer,
+    generateOverallAssessment,
+    analyzeResume,
+  };

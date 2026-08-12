@@ -1,22 +1,32 @@
 const Interview = require("../models/Interview");
+
 const {
   generateQuestions,
   evaluateAnswer,
   generateOverallAssessment,
 } = require("../services/geminiService");
+
+// ================= CREATE INTERVIEW =================
+
 const createInterview = async (req, res) => {
   try {
-    const { role, difficulty, numberOfQuestions } = req.body;
+    const {
+      company,
+      role,
+      type,
+      difficulty,
+      numberOfQuestions,
+    } = req.body;
 
     const userId = req.user.id;
 
     // Create AI prompt
     const prompt = `
-    Generate ${numberOfQuestions} ${difficulty} level interview questions
-    for the role of ${role}.
+Generate ${numberOfQuestions} ${difficulty} level interview questions
+for the role of ${role}.
 
-    Return only the questions as a numbered list.
-    `;
+Return only the questions as a numbered list.
+`;
 
     // Generate questions using Gemini
     const questions = await generateQuestions(prompt);
@@ -24,7 +34,9 @@ const createInterview = async (req, res) => {
     // Convert response into an array
     const questionArray = questions
       .split("\n")
-      .map((question) => question.replace(/^\d+\.\s*/, "").trim())
+      .map((question) =>
+        question.replace(/^\d+\.\s*/, "").trim()
+      )
       .filter((question) => question !== "");
 
     console.log(questionArray);
@@ -32,7 +44,9 @@ const createInterview = async (req, res) => {
     // Create interview document
     const interview = new Interview({
       userId,
+      company,
       role,
+      type,
       difficulty,
       questions: questionArray,
       startedAt: new Date(),
@@ -46,15 +60,15 @@ const createInterview = async (req, res) => {
       message: "Interview created successfully",
       interview,
     });
-
   } catch (error) {
+    console.error("Create interview error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 
 // ================= GET MY INTERVIEWS =================
 
@@ -71,7 +85,6 @@ const getMyInterviews = async (req, res) => {
       count: interviews.length,
       interviews,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -103,7 +116,6 @@ const getInterviewById = async (req, res) => {
       success: true,
       interview,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -143,7 +155,6 @@ const updateInterview = async (req, res) => {
       message: "Interview updated successfully",
       interview,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -175,7 +186,6 @@ const deleteInterview = async (req, res) => {
       success: true,
       message: "Interview deleted successfully",
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -183,6 +193,9 @@ const deleteInterview = async (req, res) => {
     });
   }
 };
+
+// ================= SUBMIT ANSWER =================
+
 const submitAnswer = async (req, res) => {
   try {
     const interviewId = req.params.id;
@@ -204,6 +217,7 @@ const submitAnswer = async (req, res) => {
         message: "Interview not found",
       });
     }
+
     if (interview.status === "completed") {
       return res.status(400).json({
         success: false,
@@ -214,8 +228,8 @@ const submitAnswer = async (req, res) => {
     console.log("Interview Found");
 
     const evaluation = await evaluateAnswer(
-      item.question,
-      item.answer
+      question,
+      answer
     );
 
     console.log("Evaluation:", evaluation);
@@ -225,27 +239,36 @@ const submitAnswer = async (req, res) => {
       answer,
       score: evaluation.score,
       feedback: evaluation.feedback,
+      strengths: evaluation.strengths,
+      improvements: evaluation.improvements,
     });
 
-// Mark interview as completed if all questions are answered
+    // Mark interview as completed if all questions are answered
     console.log("QA Length:", interview.qa.length);
     console.log("Questions Length:", interview.questions.length);
+
     if (interview.qa.length === interview.questions.length) {
       console.log("Interview Completed!");
       interview.status = "completed";
     }
+
     console.log("QA after push:", interview.qa);
 
     const savedInterview = await interview.save();
+
     console.log("Saved Interview:");
     console.log(savedInterview);
 
-    const updatedInterview = await Interview.findById(interviewId);
+    const updatedInterview = await Interview.findById(
+      interviewId
+    );
 
     console.log("Updated Interview:");
     console.log(updatedInterview);
+
     console.log("Updated QA:");
     console.log(updatedInterview.qa);
+
     console.log("Interview saved successfully");
 
     res.status(200).json({
@@ -253,7 +276,6 @@ const submitAnswer = async (req, res) => {
       message: "Answer submitted successfully",
       interview,
     });
-
   } catch (error) {
     console.error(error);
 
@@ -263,6 +285,9 @@ const submitAnswer = async (req, res) => {
     });
   }
 };
+
+// ================= SUBMIT COMPLETE INTERVIEW =================
+
 const submitInterview = async (req, res) => {
   try {
     const interviewId = req.params.id;
@@ -320,7 +345,9 @@ const submitInterview = async (req, res) => {
     interview.qa = evaluations;
 
     // Generate overall AI assessment
-    console.log("Generating overall interview assessment...");
+    console.log(
+      "Generating overall interview assessment..."
+    );
 
     const overallAssessment =
       await generateOverallAssessment(evaluations);
@@ -330,10 +357,17 @@ const submitInterview = async (req, res) => {
 
     // Save overall assessment
     interview.feedback = {
-      overallSummary: overallAssessment.overallSummary,
-      overallStrengths: overallAssessment.overallStrengths,
-      overallImprovements: overallAssessment.overallImprovements,
-      recommendation: overallAssessment.recommendation,
+      overallSummary:
+        overallAssessment.overallSummary,
+
+      overallStrengths:
+        overallAssessment.overallStrengths,
+
+      overallImprovements:
+        overallAssessment.overallImprovements,
+
+      recommendation:
+        overallAssessment.recommendation,
     };
 
     // Record interview end time
@@ -364,6 +398,7 @@ const submitInterview = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   createInterview,
   getMyInterviews,
