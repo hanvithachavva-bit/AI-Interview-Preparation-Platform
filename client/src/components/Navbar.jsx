@@ -208,6 +208,23 @@ function Navbar() {
             📋 My Interviews
           </Link>
 
+          {/* Performance */}
+
+          <Link
+            to="/performance"
+            onClick={closeSidebar}
+            style={{
+              textDecoration: "none",
+              color: "#374151",
+              fontWeight: "500",
+              padding: "13px 15px",
+              borderRadius: "8px",
+              fontSize: "15px",
+            }}
+          >
+            📊 Performance
+          </Link>
+
           {/* Resume Matcher */}
 
           <Link

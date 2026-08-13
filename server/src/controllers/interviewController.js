@@ -210,6 +210,210 @@ const getMyInterviews = async (req, res) => {
     });
   }
 };
+// ================= GET PERFORMANCE =================
+
+const getPerformance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all interviews belonging to the logged-in user
+    const interviews = await Interview.find({ userId }).sort({
+      createdAt: -1,
+    });
+
+    // ================= BASIC COUNTS =================
+
+    const totalInterviews = interviews.length;
+
+    const completedInterviews = interviews.filter(
+      (interview) => interview.status === "completed"
+    );
+
+    const completedCount = completedInterviews.length;
+
+    const inProgressCount = interviews.filter(
+      (interview) => interview.status === "in-progress"
+    ).length;
+
+    // ================= CALCULATE SCORES =================
+
+    const interviewScores = completedInterviews
+      .map((interview) => {
+        if (!interview.qa || interview.qa.length === 0) {
+          return null;
+        }
+
+        const totalScore = interview.qa.reduce(
+          (sum, item) => sum + (item.score || 0),
+          0
+        );
+
+        const averageScore =
+          interview.qa.length > 0
+            ? totalScore / interview.qa.length
+            : 0;
+
+        return {
+          interview,
+          averageScore,
+        };
+      })
+      .filter(Boolean);
+
+    // ================= OVERALL AVERAGE =================
+
+    const averageScore =
+      interviewScores.length > 0
+        ? interviewScores.reduce(
+            (sum, item) => sum + item.averageScore,
+            0
+          ) / interviewScores.length
+        : 0;
+
+    // ================= BEST SCORE =================
+
+    const bestScore =
+      interviewScores.length > 0
+        ? Math.max(
+            ...interviewScores.map(
+              (item) => item.averageScore
+            )
+          )
+        : 0;
+
+    // ================= AVERAGE DURATION =================
+
+    const interviewsWithDuration =
+      completedInterviews.filter(
+        (interview) =>
+          interview.durationSeconds &&
+          interview.durationSeconds > 0
+      );
+
+    const averageDurationSeconds =
+      interviewsWithDuration.length > 0
+        ? interviewsWithDuration.reduce(
+            (sum, interview) =>
+              sum + interview.durationSeconds,
+            0
+          ) / interviewsWithDuration.length
+        : 0;
+
+    // ================= PERFORMANCE BY TYPE =================
+
+    const typeMap = {};
+
+    interviewScores.forEach(
+      ({ interview, averageScore }) => {
+        const type = interview.type || "Unknown";
+
+        if (!typeMap[type]) {
+          typeMap[type] = {
+            type,
+            interviews: 0,
+            totalScore: 0,
+          };
+        }
+
+        typeMap[type].interviews += 1;
+        typeMap[type].totalScore += averageScore;
+      }
+    );
+
+    const performanceByType = Object.values(
+      typeMap
+    ).map((item) => ({
+      type: item.type,
+      interviews: item.interviews,
+      averageScore: Number(
+        (item.totalScore / item.interviews).toFixed(1)
+      ),
+    }));
+
+    // ================= PERFORMANCE BY DIFFICULTY =================
+
+    const difficultyMap = {};
+
+    interviewScores.forEach(
+      ({ interview, averageScore }) => {
+        const difficulty =
+          interview.difficulty || "Unknown";
+
+        if (!difficultyMap[difficulty]) {
+          difficultyMap[difficulty] = {
+            difficulty,
+            interviews: 0,
+            totalScore: 0,
+          };
+        }
+
+        difficultyMap[difficulty].interviews += 1;
+        difficultyMap[difficulty].totalScore +=
+          averageScore;
+      }
+    );
+
+    const performanceByDifficulty =
+      Object.values(difficultyMap).map((item) => ({
+        difficulty: item.difficulty,
+        interviews: item.interviews,
+        averageScore: Number(
+          (item.totalScore / item.interviews).toFixed(1)
+        ),
+      }));
+
+    // ================= RECENT PERFORMANCE =================
+
+    const recentPerformance = interviewScores
+      .slice(0, 5)
+      .map(({ interview, averageScore }) => ({
+        id: interview._id,
+        company: interview.company,
+        role: interview.role,
+        type: interview.type,
+        difficulty: interview.difficulty,
+        score: Number(averageScore.toFixed(1)),
+        durationSeconds: interview.durationSeconds || 0,
+        completedAt:
+          interview.endedAt || interview.updatedAt,
+      }));
+
+    // ================= RESPONSE =================
+
+    res.status(200).json({
+      success: true,
+
+      overview: {
+        totalInterviews,
+        completedInterviews: completedCount,
+        inProgressInterviews: inProgressCount,
+        averageScore: Number(
+          averageScore.toFixed(1)
+        ),
+        bestScore: Number(bestScore.toFixed(1)),
+        averageDurationSeconds: Math.round(
+          averageDurationSeconds
+        ),
+      },
+
+      performanceByType,
+
+      performanceByDifficulty,
+
+      recentPerformance,
+    });
+  } catch (error) {
+    console.error(
+      "Get performance error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // ================= GET INTERVIEW BY ID =================
 
@@ -536,6 +740,7 @@ const submitInterview = async (req, res) => {
 module.exports = {
   createInterview,
   getMyInterviews,
+  getPerformance,
   getInterviewById,
   updateInterview,
   deleteInterview,

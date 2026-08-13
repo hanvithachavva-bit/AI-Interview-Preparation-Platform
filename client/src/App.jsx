@@ -7,7 +7,7 @@ import CreateInterview from "./pages/CreateInterview";
 import Interview from "./pages/Interview";
 import InterviewResult from "./pages/InterviewResult";
 import ResumeMatcher from "./pages/ResumeMatcher";
-
+import Performance from "./pages/Performance";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Interviews from "./pages/Interviews";
@@ -35,6 +35,18 @@ function App() {
               <>
                 <Navbar />
                 <Dashboard />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        {/* Performance */}
+        <Route
+          path="/performance"
+          element={
+            <ProtectedRoute>
+              <>
+                <Navbar />
+                <Performance />
               </>
             </ProtectedRoute>
           }
