@@ -11,6 +11,7 @@ import Performance from "./pages/Performance";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Interviews from "./pages/Interviews";
+import Profile from "./pages/Profile";
 function App() {
   return (
     <BrowserRouter>
@@ -101,6 +102,18 @@ function App() {
               <>
                 <Navbar />
                 <ResumeMatcher />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        {/* Profile */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <>
+                <Navbar />
+                <Profile />
               </>
             </ProtectedRoute>
           }

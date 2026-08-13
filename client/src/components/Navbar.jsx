@@ -225,6 +225,23 @@ function Navbar() {
             📊 Performance
           </Link>
 
+          {/* Profile */}
+
+          <Link
+            to="/profile"
+            onClick={closeSidebar}
+            style={{
+              textDecoration: "none",
+              color: "#374151",
+              fontWeight: "500",
+              padding: "13px 15px",
+              borderRadius: "8px",
+              fontSize: "15px",
+            }}
+          >
+            👤 Profile
+          </Link>
+
           {/* Resume Matcher */}
 
           <Link
