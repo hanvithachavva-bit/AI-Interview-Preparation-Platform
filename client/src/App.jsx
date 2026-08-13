@@ -8,10 +8,13 @@ import Interview from "./pages/Interview";
 import InterviewResult from "./pages/InterviewResult";
 import ResumeMatcher from "./pages/ResumeMatcher";
 import Performance from "./pages/Performance";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
 import Interviews from "./pages/Interviews";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from "./components/Navbar";
+
 function App() {
   return (
     <BrowserRouter>
@@ -29,6 +32,7 @@ function App() {
         {/* ================= PROTECTED ROUTES ================= */}
 
         {/* Dashboard */}
+
         <Route
           path="/dashboard"
           element={
@@ -40,7 +44,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         {/* Performance */}
+
         <Route
           path="/performance"
           element={
@@ -53,8 +59,22 @@ function App() {
           }
         />
 
+        {/* Settings */}
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <>
+                <Navbar />
+                <Settings />
+              </>
+            </ProtectedRoute>
+          }
+        />
 
         {/* Create Interview */}
+
         <Route
           path="/create-interview"
           element={
@@ -67,8 +87,8 @@ function App() {
           }
         />
 
-
         {/* Interview */}
+
         <Route
           path="/interview/:id"
           element={
@@ -81,8 +101,8 @@ function App() {
           }
         />
 
-
         {/* Interview Result */}
+
         <Route
           path="/interview-result/:id"
           element={
@@ -94,7 +114,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         {/* Resume Matcher */}
+
         <Route
           path="/resume-matcher"
           element={
@@ -106,7 +128,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         {/* Profile */}
+
         <Route
           path="/profile"
           element={
@@ -120,6 +144,7 @@ function App() {
         />
 
         {/* My Interviews */}
+
         <Route
           path="/interviews"
           element={
@@ -130,7 +155,8 @@ function App() {
               </>
             </ProtectedRoute>
           }
-       />    
+        />
+
       </Routes>
     </BrowserRouter>
   );

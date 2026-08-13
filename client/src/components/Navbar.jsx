@@ -260,32 +260,22 @@ function Navbar() {
           </Link>
 
           {/* Settings - Coming Later */}
-
-          <button
-            disabled
+          <Link
+            to="/settings"
+            onClick={closeSidebar}
             style={{
-              textAlign: "left",
-              border: "none",
-              background: "transparent",
-              color: "#9ca3af",
+              textDecoration: "none",
+              color: "#374151",
               fontWeight: "500",
               padding: "13px 15px",
               borderRadius: "8px",
               fontSize: "15px",
-              cursor: "not-allowed",
             }}
           >
             ⚙️ Settings
-            <span
-              style={{
-                fontSize: "11px",
-                marginLeft: "8px",
-                color: "#9ca3af",
-              }}
-            >
-              Coming Soon
-            </span>
-          </button>
+          </Link>
+
+          
         </div>
 
         {/* Bottom Section */}
