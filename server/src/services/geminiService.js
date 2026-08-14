@@ -8,6 +8,9 @@ async function generateQuestions(prompt) {
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
 
   console.dir(response, { depth: null });
@@ -128,11 +131,13 @@ Return exactly this format:
     .replace(/```/g, "")
     .trim();
 
+  // Remove trailing commas before } or ]
+  text = text.replace(/,\s*([}\]])/g, "$1");
+
   console.log("Gemini Response:");
   console.log(text);
 
   const evaluation = JSON.parse(text);
-
   return {
     score: Math.max(0, Math.min(10, Number(evaluation.score))),
     feedback: evaluation.feedback,
