@@ -13,8 +13,6 @@ async function generateQuestions(prompt) {
     },
   });
 
-  console.dir(response, { depth: null });
-
   let text;
 
   if (typeof response.text === "function") {
@@ -104,9 +102,6 @@ Return exactly this format:
     model: "gemini-3.5-flash-lite",
     contents: prompt,
   });
-
-  console.dir(response, { depth: null });
-
   let text;
 
   if (typeof response.text === "function") {
@@ -133,10 +128,6 @@ Return exactly this format:
 
   // Remove trailing commas before } or ]
   text = text.replace(/,\s*([}\]])/g, "$1");
-
-  console.log("Gemini Response:");
-  console.log(text);
-
   const evaluation = JSON.parse(text);
   return {
     score: Math.max(0, Math.min(10, Number(evaluation.score))),
@@ -203,8 +194,6 @@ Rules:
     contents: prompt,
   });
 
-  console.dir(response, { depth: null });
-
   let text;
 
   if (typeof response.text === "function") {
@@ -228,9 +217,6 @@ Rules:
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
-
-  console.log("Gemini Resume Analysis:");
-  console.log(text);
 
   const analysis = JSON.parse(text);
 
@@ -326,7 +312,6 @@ Return exactly this format:
       responseMimeType: "application/json",
     },
   });
-  console.dir(response, { depth: null });
 
   let text;
 
@@ -351,9 +336,6 @@ Return exactly this format:
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
-
-  console.log("Gemini Response:");
-  console.log(text);
 
   const assessment = JSON.parse(text);
 

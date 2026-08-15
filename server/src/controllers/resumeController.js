@@ -12,13 +12,8 @@ const analyzeResumeMatch = async (req, res) => {
     // ================= RESUME FILE =================
 
     if (req.file) {
-      console.log("Resume file received:");
-      console.log(req.file.originalname);
 
       resume = await extractResumeText(req.file);
-
-      console.log("Resume text extracted successfully.");
-      console.log("Resume characters:", resume.length);
     }
 
     // ================= RESUME TEXT =================
@@ -46,18 +41,12 @@ const analyzeResumeMatch = async (req, res) => {
       });
     }
 
-    console.log("Resume analysis started");
-
     // ================= GEMINI ANALYSIS =================
 
     const analysis = await analyzeResume(
       resume,
       jobDescription
     );
-
-    console.log("Resume analysis completed");
-    console.log(analysis);
-
     // ================= RESPONSE =================
 
     res.status(200).json({

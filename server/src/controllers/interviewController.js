@@ -153,10 +153,6 @@ Example format:
           .trim()
       )
       .filter((question) => question !== "");
-
-    console.log("Interview Type:", type);
-    console.log("Generated Questions:", questionArray);
-
     // ================= CREATE INTERVIEW DOCUMENT =================
 
     const interview = new Interview({
@@ -523,11 +519,6 @@ const submitAnswer = async (req, res) => {
     const interviewId = req.params.id;
     const { question, answer } = req.body;
     const userId = req.user.id;
-
-    console.log("Interview ID:", interviewId);
-    console.log("Question:", question);
-    console.log("Answer:", answer);
-
     const interview = await Interview.findOne({
       _id: interviewId,
       userId,
@@ -546,16 +537,10 @@ const submitAnswer = async (req, res) => {
         message: "Interview already completed",
       });
     }
-
-    console.log("Interview Found");
-
     const evaluation = await evaluateAnswer(
       question,
       answer
     );
-
-    console.log("Evaluation:", evaluation);
-
     interview.qa.push({
       question,
       answer,
@@ -566,38 +551,17 @@ const submitAnswer = async (req, res) => {
     });
 
     // Mark interview as completed if all questions are answered
-
-    console.log("QA Length:", interview.qa.length);
-    console.log(
-      "Questions Length:",
-      interview.questions.length
-    );
-
     if (
       interview.qa.length ===
       interview.questions.length
     ) {
-      console.log("Interview Completed!");
       interview.status = "completed";
     }
 
-    console.log("QA after push:", interview.qa);
-
     const savedInterview = await interview.save();
-
-    console.log("Saved Interview:");
-    console.log(savedInterview);
 
     const updatedInterview =
       await Interview.findById(interviewId);
-
-    console.log("Updated Interview:");
-    console.log(updatedInterview);
-
-    console.log("Updated QA:");
-    console.log(updatedInterview.qa);
-
-    console.log("Interview saved successfully");
 
     res.status(200).json({
       success: true,
@@ -645,20 +609,10 @@ const submitInterview = async (req, res) => {
 
     const evaluations = await Promise.all(
       answers.map(async (item) => {
-        console.log("Evaluating question:");
-        console.log(item.question);
-
-        console.log("Candidate answer:");
-        console.log(item.answer);
-
         const evaluation = await evaluateAnswer(
           item.question,
           item.answer
         );
-
-        console.log("Gemini Evaluation:");
-        console.log(evaluation);
-
         return {
           question: item.question,
           answer: item.answer,
@@ -675,18 +629,10 @@ const submitInterview = async (req, res) => {
     interview.qa = evaluations;
 
     // ================= GENERATE OVERALL ASSESSMENT =================
-
-    console.log(
-      "Generating overall interview assessment..."
-    );
-
     const overallAssessment =
       await generateOverallAssessment(
         evaluations
       );
-
-    console.log("Overall Assessment:");
-    console.log(overallAssessment);
 
     // ================= SAVE OVERALL ASSESSMENT =================
 
