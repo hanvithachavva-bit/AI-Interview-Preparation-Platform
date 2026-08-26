@@ -4,6 +4,37 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+// ============================================================
+// EXTRACT GEMINI RESPONSE TEXT
+// ============================================================
+
+function extractResponseText(response) {
+  if (typeof response.text === "function") {
+    return response.text();
+  }
+
+  if (typeof response.text === "string") {
+    return response.text;
+  }
+
+  if (
+    response.candidates &&
+    response.candidates[0]?.content?.parts?.length
+  ) {
+    return response.candidates[0].content.parts
+      .map((part) => part.text || "")
+      .join("");
+  }
+
+  throw new Error(
+    "Unable to extract text from Gemini response."
+  );
+}
+
+// ============================================================
+// GENERATE QUESTIONS
+// ============================================================
+
 async function generateQuestions(prompt) {
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
@@ -13,31 +44,45 @@ async function generateQuestions(prompt) {
     },
   });
 
-  let text;
-
-  if (typeof response.text === "function") {
-    text = response.text();
-  } else if (typeof response.text === "string") {
-    text = response.text;
-  } else if (
-    response.candidates &&
-    response.candidates[0]?.content?.parts?.length
-  ) {
-    text = response.candidates[0].content.parts
-      .map((part) => part.text)
-      .join("");
-  } else {
-    throw new Error(
-      "Unable to extract generated questions from Gemini response."
-    );
-  }
+  const text = extractResponseText(response);
 
   return text;
 }
 
+// ============================================================
+// GENERATE SINGLE QUESTION
+// ============================================================
+
+async function generateSingleQuestion(prompt) {
+  const response = await ai.models.generateContent({
+    model: "gemini-3.5-flash-lite",
+    contents: prompt,
+  });
+
+  let text = extractResponseText(response);
+
+  text = text
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  // Remove accidental numbering such as:
+  // 1. What is React?
+  // 1) What is React?
+  text = text
+    .replace(/^\s*\d+[\.\)]\s*/, "")
+    .trim();
+
+  return text;
+}
+
+// ============================================================
+// EVALUATE ANSWER
+// ============================================================
+
 async function evaluateAnswer(question, answer) {
   const prompt = `
-You are an expert technical interviewer evaluating a candidate's answer.
+You are an expert interviewer evaluating a candidate's answer.
 
 Interview Question:
 ${question}
@@ -76,7 +121,7 @@ Scoring guide:
 Important:
 
 - Do not give a high score just because the answer sounds confident.
-- Evaluate the actual technical content.
+- Evaluate the actual content of the answer.
 - Do not assume information that the candidate did not provide.
 - If the answer is empty, give 0.
 - Feedback must briefly explain why the score was given.
@@ -84,7 +129,8 @@ Important:
 - Keep feedback to a maximum of 2 sentences.
 - Strengths should briefly describe what the candidate did well.
 - Improvements should briefly describe what the candidate should improve or add.
-- If the answer is completely wrong or meaningless, strengths can say "No significant strengths identified."
+- If the answer is completely wrong or meaningless, strengths can say:
+  "No significant strengths identified."
 - Return ONLY valid JSON.
 - Do not use markdown or code blocks.
 
@@ -101,25 +147,12 @@ Return exactly this format:
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
-  let text;
 
-  if (typeof response.text === "function") {
-    text = response.text();
-  } else if (typeof response.text === "string") {
-    text = response.text;
-  } else if (
-    response.candidates &&
-    response.candidates[0]?.content?.parts?.length
-  ) {
-    text = response.candidates[0].content.parts
-      .map((part) => part.text)
-      .join("");
-  } else {
-    throw new Error(
-      "Unable to extract evaluation from Gemini response."
-    );
-  }
+  let text = extractResponseText(response);
 
   text = text
     .replace(/```json/g, "")
@@ -128,15 +161,38 @@ Return exactly this format:
 
   // Remove trailing commas before } or ]
   text = text.replace(/,\s*([}\]])/g, "$1");
+
   const evaluation = JSON.parse(text);
+
+  const score = Number(evaluation.score);
+
   return {
-    score: Math.max(0, Math.min(10, Number(evaluation.score))),
-    feedback: evaluation.feedback,
-    strengths: evaluation.strengths,
-    improvements: evaluation.improvements,
+    score: Number.isFinite(score)
+      ? Math.max(0, Math.min(10, score))
+      : 0,
+
+    feedback:
+      evaluation.feedback ||
+      "No feedback was provided.",
+
+    strengths:
+      evaluation.strengths ||
+      "No significant strengths identified.",
+
+    improvements:
+      evaluation.improvements ||
+      "Try to provide a more complete answer.",
   };
 }
-async function analyzeResume(resume, jobDescription) {
+
+// ============================================================
+// RESUME + JOB DESCRIPTION ANALYSIS
+// ============================================================
+
+async function analyzeResume(
+  resume,
+  jobDescription
+) {
   const prompt = `
 You are an expert resume and recruitment analyst.
 
@@ -192,57 +248,64 @@ Rules:
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
 
-  let text;
-
-  if (typeof response.text === "function") {
-    text = response.text();
-  } else if (typeof response.text === "string") {
-    text = response.text;
-  } else if (
-    response.candidates &&
-    response.candidates[0]?.content?.parts?.length
-  ) {
-    text = response.candidates[0].content.parts
-      .map((part) => part.text)
-      .join("");
-  } else {
-    throw new Error(
-      "Unable to extract resume analysis from Gemini response."
-    );
-  }
+  let text = extractResponseText(response);
 
   text = text
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
 
+  text = text.replace(/,\s*([}\]])/g, "$1");
+
   const analysis = JSON.parse(text);
 
+  const matchPercentage = Number(
+    analysis.matchPercentage
+  );
+
   return {
-    matchPercentage: Math.max(
-      0,
-      Math.min(100, Number(analysis.matchPercentage))
-    ),
-    matchingSkills: Array.isArray(analysis.matchingSkills)
-      ? analysis.matchingSkills
-      : [],
-    missingSkills: Array.isArray(analysis.missingSkills)
-      ? analysis.missingSkills
-      : [],
-    strengths: Array.isArray(analysis.strengths)
-      ? analysis.strengths
-      : [],
-    improvements: Array.isArray(analysis.improvements)
-      ? analysis.improvements
-      : [],
+    matchPercentage: Number.isFinite(
+      matchPercentage
+    )
+      ? Math.max(
+          0,
+          Math.min(100, matchPercentage)
+        )
+      : 0,
+
+    matchingSkills:
+      Array.isArray(analysis.matchingSkills)
+        ? analysis.matchingSkills
+        : [],
+
+    missingSkills:
+      Array.isArray(analysis.missingSkills)
+        ? analysis.missingSkills
+        : [],
+
+    strengths:
+      Array.isArray(analysis.strengths)
+        ? analysis.strengths
+        : [],
+
+    improvements:
+      Array.isArray(analysis.improvements)
+        ? analysis.improvements
+        : [],
+
     summary: analysis.summary || "",
   };
 }
 
+// ============================================================
+// GENERATE OVERALL INTERVIEW ASSESSMENT
+// ============================================================
 
-// Generate an overall assessment for the complete interview
 async function generateOverallAssessment(qa) {
   const formattedQA = qa
     .map(
@@ -313,43 +376,40 @@ Return exactly this format:
     },
   });
 
-  let text;
-
-  if (typeof response.text === "function") {
-    text = response.text();
-  } else if (typeof response.text === "string") {
-    text = response.text;
-  } else if (
-    response.candidates &&
-    response.candidates[0]?.content?.parts?.length
-  ) {
-    text = response.candidates[0].content.parts
-      .map((part) => part.text)
-      .join("");
-  } else {
-    throw new Error(
-      "Unable to extract overall assessment from Gemini response."
-    );
-  }
+  let text = extractResponseText(response);
 
   text = text
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
 
+  text = text.replace(/,\s*([}\]])/g, "$1");
+
   const assessment = JSON.parse(text);
 
   return {
-    overallSummary: assessment.overallSummary,
-    overallStrengths: assessment.overallStrengths,
-    overallImprovements: assessment.overallImprovements,
-    recommendation: assessment.recommendation,
-  };
-  }
+    overallSummary:
+      assessment.overallSummary || "",
 
-  module.exports = {
-    generateQuestions,
-    evaluateAnswer,
-    generateOverallAssessment,
-    analyzeResume,
+    overallStrengths:
+      assessment.overallStrengths || "",
+
+    overallImprovements:
+      assessment.overallImprovements || "",
+
+    recommendation:
+      assessment.recommendation || "",
   };
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+
+module.exports = {
+  generateQuestions,
+  generateSingleQuestion,
+  evaluateAnswer,
+  generateOverallAssessment,
+  analyzeResume,
+};

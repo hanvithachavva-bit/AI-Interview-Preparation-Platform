@@ -15,15 +15,64 @@ const {
 
 const authMiddleware = require("../middleware/authMiddleware");
 
-router.post("/", authMiddleware, createInterview);
+// ============================================================
+// INTERVIEW ROUTES
+// ============================================================
 
-router.get("/", authMiddleware, getMyInterviews);
-router.get("/performance", authMiddleware, getPerformance);
-router.get("/:id", authMiddleware, getInterviewById);
+// Create a new interview
+router.post(
+  "/",
+  authMiddleware,
+  createInterview
+);
 
-router.put("/:id", authMiddleware, updateInterview);
-router.post("/:id/answer", authMiddleware, submitAnswer);
-router.post("/:id/submit", authMiddleware, submitInterview);
-router.delete("/:id", authMiddleware, deleteInterview);
+// Get all interviews of logged-in user
+router.get(
+  "/",
+  authMiddleware,
+  getMyInterviews
+);
+
+// Get performance analytics
+router.get(
+  "/performance",
+  authMiddleware,
+  getPerformance
+);
+
+// Get a specific interview
+router.get(
+  "/:id",
+  authMiddleware,
+  getInterviewById
+);
+
+// Update an interview
+router.put(
+  "/:id",
+  authMiddleware,
+  updateInterview
+);
+
+// Submit one answer and generate next adaptive question
+router.post(
+  "/:id/answer",
+  authMiddleware,
+  submitAnswer
+);
+
+// Complete an interview using the legacy submit flow
+router.post(
+  "/:id/submit",
+  authMiddleware,
+  submitInterview
+);
+
+// Delete an interview
+router.delete(
+  "/:id",
+  authMiddleware,
+  deleteInterview
+);
 
 module.exports = router;

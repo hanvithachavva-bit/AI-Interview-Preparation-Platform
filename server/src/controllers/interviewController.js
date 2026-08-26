@@ -1,12 +1,14 @@
 const Interview = require("../models/Interview");
 
 const {
-  generateQuestions,
+  generateSingleQuestion,
   evaluateAnswer,
   generateOverallAssessment,
 } = require("../services/geminiService");
 
-// ================= CREATE INTERVIEW =================
+// ============================================================
+// CREATE INTERVIEW
+// ============================================================
 
 const createInterview = async (req, res) => {
   try {
@@ -20,7 +22,30 @@ const createInterview = async (req, res) => {
 
     const userId = req.user.id;
 
-    // ================= CREATE AI PROMPT =================
+    // ================= VALIDATION =================
+
+    if (!role || !role.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Job role is required",
+      });
+    }
+
+    const totalQuestions = Number(numberOfQuestions);
+
+    if (
+      !Number.isInteger(totalQuestions) ||
+      totalQuestions < 1 ||
+      totalQuestions > 20
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Number of questions must be between 1 and 20",
+      });
+    }
+
+    // ================= CREATE TYPE INSTRUCTION =================
 
     let typeInstruction = "";
 
@@ -37,7 +62,8 @@ tools, technologies, and practical understanding.
         typeInstruction = `
 Focus on HR interview questions.
 Ask about motivation, career goals, strengths,
-weaknesses, company fit, communication, and professional goals.
+weaknesses, company fit, communication,
+and professional goals.
 Do not generate technical questions.
 `;
         break;
@@ -48,7 +74,8 @@ Focus on behavioral interview questions.
 Ask about the candidate's past experiences,
 teamwork, leadership, conflict resolution,
 problem solving, challenges, failures, and achievements.
-Prefer questions that allow the candidate to explain real situations.
+Prefer questions that allow the candidate to explain
+real situations.
 Do not generate purely technical questions.
 `;
         break;
@@ -57,9 +84,8 @@ Do not generate purely technical questions.
         typeInstruction = `
 Focus on coding and problem-solving interview questions.
 Ask programming problems, algorithms, data structures,
-logic-building questions, debugging scenarios, and
-coding-related problem solving.
-Questions should be appropriate for the given role and difficulty.
+logic-building questions, debugging scenarios,
+and coding-related problem solving.
 `;
         break;
 
@@ -68,16 +94,14 @@ Questions should be appropriate for the given role and difficulty.
 Generate questions suitable for a panel interview.
 Include a realistic mixture of technical, behavioral,
 situational, and role-related questions.
-Questions should be suitable for multiple interviewers.
 `;
         break;
 
       case "Group Discussion":
         typeInstruction = `
 Generate group discussion topics and questions.
-Focus on topics that allow the candidate to demonstrate
-communication, reasoning, teamwork, leadership,
-critical thinking, and the ability to express opinions.
+Focus on communication, reasoning, teamwork,
+leadership, critical thinking, and expressing opinions.
 Do not generate normal technical interview questions.
 `;
         break;
@@ -86,19 +110,22 @@ Do not generate normal technical interview questions.
         typeInstruction = `
 Generate a balanced mixture of technical, HR,
 behavioral, and role-specific questions.
-The questions should cover different aspects of the candidate's
-interview preparation rather than focusing only on technical knowledge.
 `;
         break;
 
       default:
         typeInstruction = `
-Generate questions appropriate for the specified interview type.
+Generate questions appropriate for the specified
+interview type.
 `;
     }
 
+    // ================= GENERATE FIRST QUESTION =================
+
     const prompt = `
-You are an expert interviewer conducting a ${type || "Technical"} interview.
+You are an expert interviewer conducting a ${
+      type || "Technical"
+    } interview.
 
 Job Role:
 ${role}
@@ -109,51 +136,27 @@ ${company || "Not specified"}
 Difficulty:
 ${difficulty}
 
-Number of Questions:
-${numberOfQuestions}
-
 Interview Type:
 ${type || "Technical"}
 
 ${typeInstruction}
 
-Generate exactly ${numberOfQuestions} interview questions.
+Generate exactly ONE interview question.
 
 Important rules:
 
-- Questions must match the selected interview type.
-- Questions must match the job role.
-- Questions must match the requested difficulty.
-- Do not generate questions from another interview type unless the selected type is "Mixed" or "Panel".
-- Avoid duplicate questions.
-- Keep questions clear and suitable for an interview.
-- Return only the questions as a numbered list.
-- Do not include answers.
+- The question must match the selected interview type.
+- The question must match the job role.
+- The question must match the requested difficulty.
+- Do not generate an answer.
 - Do not include explanations.
 - Do not include headings.
-
-Example format:
-
-1. First question
-2. Second question
-3. Third question
+- Return ONLY the question text.
 `;
 
-    // ================= GENERATE QUESTIONS =================
+    const question = await generateSingleQuestion(prompt);
 
-    const questions = await generateQuestions(prompt);
-
-    // ================= CONVERT RESPONSE TO ARRAY =================
-
-    const questionArray = questions
-      .split("\n")
-      .map((question) =>
-        question
-          .replace(/^\s*\d+[\.\)]\s*/, "")
-          .trim()
-      )
-      .filter((question) => question !== "");
-    // ================= CREATE INTERVIEW DOCUMENT =================
+    // ================= CREATE INTERVIEW =================
 
     const interview = new Interview({
       userId,
@@ -161,11 +164,25 @@ Example format:
       role,
       type,
       difficulty,
-      questions: questionArray,
+
+      // Total questions selected by the user
+      totalQuestions,
+
+      // Difficulty of the current question
+      currentDifficulty: difficulty,
+
+      // Start with one question
+      questions: [
+        {
+          question: question.trim(),
+          difficulty,
+        },
+      ],
+
       startedAt: new Date(),
     });
 
-    // ================= SAVE TO MONGODB =================
+    // ================= SAVE =================
 
     await interview.save();
 
@@ -184,13 +201,17 @@ Example format:
   }
 };
 
-// ================= GET MY INTERVIEWS =================
+// ============================================================
+// GET MY INTERVIEWS
+// ============================================================
 
 const getMyInterviews = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const interviews = await Interview.find({ userId }).sort({
+    const interviews = await Interview.find({
+      userId,
+    }).sort({
       createdAt: -1,
     });
 
@@ -200,20 +221,26 @@ const getMyInterviews = async (req, res) => {
       interviews,
     });
   } catch (error) {
+    console.error("Get interviews error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-// ================= GET PERFORMANCE =================
+
+// ============================================================
+// GET PERFORMANCE
+// ============================================================
 
 const getPerformance = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all interviews belonging to the logged-in user
-    const interviews = await Interview.find({ userId }).sort({
+    const interviews = await Interview.find({
+      userId,
+    }).sort({
       createdAt: -1,
     });
 
@@ -245,9 +272,7 @@ const getPerformance = async (req, res) => {
         );
 
         const averageScore =
-          interview.qa.length > 0
-            ? totalScore / interview.qa.length
-            : 0;
+          totalScore / interview.qa.length;
 
         return {
           interview,
@@ -301,18 +326,21 @@ const getPerformance = async (req, res) => {
 
     interviewScores.forEach(
       ({ interview, averageScore }) => {
-        const type = interview.type || "Unknown";
+        const interviewType =
+          interview.type || "Unknown";
 
-        if (!typeMap[type]) {
-          typeMap[type] = {
-            type,
+        if (!typeMap[interviewType]) {
+          typeMap[interviewType] = {
+            type: interviewType,
             interviews: 0,
             totalScore: 0,
           };
         }
 
-        typeMap[type].interviews += 1;
-        typeMap[type].totalScore += averageScore;
+        typeMap[interviewType].interviews += 1;
+
+        typeMap[interviewType].totalScore +=
+          averageScore;
       }
     );
 
@@ -322,7 +350,9 @@ const getPerformance = async (req, res) => {
       type: item.type,
       interviews: item.interviews,
       averageScore: Number(
-        (item.totalScore / item.interviews).toFixed(1)
+        (
+          item.totalScore / item.interviews
+        ).toFixed(1)
       ),
     }));
 
@@ -332,20 +362,24 @@ const getPerformance = async (req, res) => {
 
     interviewScores.forEach(
       ({ interview, averageScore }) => {
-        const difficulty =
+        const interviewDifficulty =
           interview.difficulty || "Unknown";
 
-        if (!difficultyMap[difficulty]) {
-          difficultyMap[difficulty] = {
-            difficulty,
+        if (!difficultyMap[interviewDifficulty]) {
+          difficultyMap[interviewDifficulty] = {
+            difficulty: interviewDifficulty,
             interviews: 0,
             totalScore: 0,
           };
         }
 
-        difficultyMap[difficulty].interviews += 1;
-        difficultyMap[difficulty].totalScore +=
-          averageScore;
+        difficultyMap[
+          interviewDifficulty
+        ].interviews += 1;
+
+        difficultyMap[
+          interviewDifficulty
+        ].totalScore += averageScore;
       }
     );
 
@@ -354,7 +388,9 @@ const getPerformance = async (req, res) => {
         difficulty: item.difficulty,
         interviews: item.interviews,
         averageScore: Number(
-          (item.totalScore / item.interviews).toFixed(1)
+          (
+            item.totalScore / item.interviews
+          ).toFixed(1)
         ),
       }));
 
@@ -368,10 +404,14 @@ const getPerformance = async (req, res) => {
         role: interview.role,
         type: interview.type,
         difficulty: interview.difficulty,
-        score: Number(averageScore.toFixed(1)),
-        durationSeconds: interview.durationSeconds || 0,
+        score: Number(
+          averageScore.toFixed(1)
+        ),
+        durationSeconds:
+          interview.durationSeconds || 0,
         completedAt:
-          interview.endedAt || interview.updatedAt,
+          interview.endedAt ||
+          interview.updatedAt,
       }));
 
     // ================= RESPONSE =================
@@ -386,7 +426,9 @@ const getPerformance = async (req, res) => {
         averageScore: Number(
           averageScore.toFixed(1)
         ),
-        bestScore: Number(bestScore.toFixed(1)),
+        bestScore: Number(
+          bestScore.toFixed(1)
+        ),
         averageDurationSeconds: Math.round(
           averageDurationSeconds
         ),
@@ -411,7 +453,9 @@ const getPerformance = async (req, res) => {
   }
 };
 
-// ================= GET INTERVIEW BY ID =================
+// ============================================================
+// GET INTERVIEW BY ID
+// ============================================================
 
 const getInterviewById = async (req, res) => {
   try {
@@ -435,6 +479,11 @@ const getInterviewById = async (req, res) => {
       interview,
     });
   } catch (error) {
+    console.error(
+      "Get interview error:",
+      error
+    );
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -442,24 +491,27 @@ const getInterviewById = async (req, res) => {
   }
 };
 
-// ================= UPDATE INTERVIEW =================
+// ============================================================
+// UPDATE INTERVIEW
+// ============================================================
 
 const updateInterview = async (req, res) => {
   try {
     const interviewId = req.params.id;
     const userId = req.user.id;
 
-    const interview = await Interview.findOneAndUpdate(
-      {
-        _id: interviewId,
-        userId,
-      },
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const interview =
+      await Interview.findOneAndUpdate(
+        {
+          _id: interviewId,
+          userId,
+        },
+        req.body,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
     if (!interview) {
       return res.status(404).json({
@@ -474,6 +526,11 @@ const updateInterview = async (req, res) => {
       interview,
     });
   } catch (error) {
+    console.error(
+      "Update interview error:",
+      error
+    );
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -481,17 +538,20 @@ const updateInterview = async (req, res) => {
   }
 };
 
-// ================= DELETE INTERVIEW =================
+// ============================================================
+// DELETE INTERVIEW
+// ============================================================
 
 const deleteInterview = async (req, res) => {
   try {
     const interviewId = req.params.id;
     const userId = req.user.id;
 
-    const interview = await Interview.findOneAndDelete({
-      _id: interviewId,
-      userId,
-    });
+    const interview =
+      await Interview.findOneAndDelete({
+        _id: interviewId,
+        userId,
+      });
 
     if (!interview) {
       return res.status(404).json({
@@ -505,6 +565,11 @@ const deleteInterview = async (req, res) => {
       message: "Interview deleted successfully",
     });
   } catch (error) {
+    console.error(
+      "Delete interview error:",
+      error
+    );
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -512,13 +577,53 @@ const deleteInterview = async (req, res) => {
   }
 };
 
-// ================= SUBMIT ANSWER =================
+// ============================================================
+// ADAPTIVE DIFFICULTY
+// ============================================================
+
+const getNextDifficulty = (
+  currentDifficulty,
+  score
+) => {
+  if (score >= 8) {
+    if (currentDifficulty === "Easy") {
+      return "Medium";
+    }
+
+    if (currentDifficulty === "Medium") {
+      return "Hard";
+    }
+
+    return "Hard";
+  }
+
+  if (score <= 4) {
+    if (currentDifficulty === "Hard") {
+      return "Medium";
+    }
+
+    if (currentDifficulty === "Medium") {
+      return "Easy";
+    }
+
+    return "Easy";
+  }
+
+  return currentDifficulty;
+};
+
+// ============================================================
+// SUBMIT ONE ANSWER - ADAPTIVE INTERVIEW
+// ============================================================
 
 const submitAnswer = async (req, res) => {
   try {
     const interviewId = req.params.id;
     const { question, answer } = req.body;
     const userId = req.user.id;
+
+    // ================= FIND INTERVIEW =================
+
     const interview = await Interview.findOne({
       _id: interviewId,
       userId,
@@ -537,10 +642,32 @@ const submitAnswer = async (req, res) => {
         message: "Interview already completed",
       });
     }
+
+    // ================= VALIDATE =================
+
+    if (!question || !question.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Question is required",
+      });
+    }
+
+    if (!answer || !answer.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Answer is required",
+      });
+    }
+
+    // ================= EVALUATE ANSWER =================
+
     const evaluation = await evaluateAnswer(
       question,
       answer
     );
+
+    // ================= SAVE EVALUATION =================
+
     interview.qa.push({
       question,
       answer,
@@ -550,26 +677,217 @@ const submitAnswer = async (req, res) => {
       improvements: evaluation.improvements,
     });
 
-    // Mark interview as completed if all questions are answered
+    // ================= CHECK FINAL QUESTION =================
+
+    const answeredQuestions =
+      interview.qa.length;
+
     if (
-      interview.qa.length ===
-      interview.questions.length
+      answeredQuestions >=
+      interview.totalQuestions
     ) {
+      // ================= OVERALL ASSESSMENT =================
+
+      const overallAssessment =
+        await generateOverallAssessment(
+          interview.qa
+        );
+
+      interview.feedback = {
+        overallSummary:
+          overallAssessment.overallSummary,
+
+        overallStrengths:
+          overallAssessment.overallStrengths,
+
+        overallImprovements:
+          overallAssessment.overallImprovements,
+
+        recommendation:
+          overallAssessment.recommendation,
+      };
+
+      // ================= COMPLETE INTERVIEW =================
+
+      const endedAt = new Date();
+
+      const durationSeconds = Math.floor(
+        (endedAt - interview.startedAt) /
+          1000
+      );
+
+      interview.endedAt = endedAt;
+      interview.durationSeconds =
+        durationSeconds;
       interview.status = "completed";
+
+      await interview.save();
+
+      return res.status(200).json({
+        success: true,
+        completed: true,
+        message:
+          "Interview completed successfully",
+        evaluation,
+        interview,
+      });
     }
 
-    const savedInterview = await interview.save();
+    // ================= NEXT DIFFICULTY =================
 
-    const updatedInterview =
-      await Interview.findById(interviewId);
+    const nextDifficulty =
+      getNextDifficulty(
+        interview.currentDifficulty,
+        evaluation.score
+      );
 
-    res.status(200).json({
+    interview.currentDifficulty =
+      nextDifficulty;
+
+    // ================= TYPE INSTRUCTION =================
+
+    let typeInstruction = "";
+
+    switch (interview.type) {
+      case "Technical":
+        typeInstruction = `
+Focus on technical questions related to the role.
+Test technical knowledge, concepts, tools,
+technologies, and practical understanding.
+`;
+        break;
+
+      case "HR":
+        typeInstruction = `
+Focus on HR interview questions about motivation,
+career goals, strengths, weaknesses, company fit,
+communication, and professional goals.
+Do not generate technical questions.
+`;
+        break;
+
+      case "Behavioral":
+        typeInstruction = `
+Focus on behavioral interview questions involving
+past experiences, teamwork, leadership, conflict
+resolution, problem solving, challenges, and achievements.
+`;
+        break;
+
+      case "Coding":
+        typeInstruction = `
+Focus on coding and problem-solving questions,
+algorithms, data structures, debugging,
+and programming logic.
+`;
+        break;
+
+      case "Panel":
+        typeInstruction = `
+Generate questions suitable for a panel interview.
+Include a mixture of technical, behavioral,
+situational, and role-related questions.
+`;
+        break;
+
+      case "Group Discussion":
+        typeInstruction = `
+Generate discussion-oriented questions that test
+communication, reasoning, teamwork, leadership,
+and critical thinking.
+`;
+        break;
+
+      case "Mixed":
+        typeInstruction = `
+Generate a balanced mixture of technical, HR,
+behavioral, and role-specific questions.
+`;
+        break;
+
+      default:
+        typeInstruction = `
+Generate a question appropriate for the
+interview type.
+`;
+    }
+
+    // ================= GENERATE NEXT QUESTION =================
+
+    const prompt = `
+You are an expert interviewer conducting a ${
+      interview.type || "Technical"
+    } interview.
+
+Job Role:
+${interview.role}
+
+Company:
+${interview.company || "Not specified"}
+
+Interview Type:
+${interview.type || "Technical"}
+
+Current Difficulty:
+${nextDifficulty}
+
+${typeInstruction}
+
+Generate exactly ONE interview question.
+
+Important rules:
+
+- The question must match the job role.
+- The question must match the interview type.
+- The question must match the requested difficulty.
+- Do not repeat any previous question.
+- Do not provide an answer.
+- Do not provide explanations.
+- Do not include headings.
+- Return ONLY the question text.
+
+Previous questions:
+${interview.questions
+  .map((item) => item.question)
+  .join("\n")}
+`;
+
+    const nextQuestion =
+      await generateSingleQuestion(prompt);
+
+    // ================= SAVE NEXT QUESTION =================
+
+    interview.questions.push({
+      question: nextQuestion.trim(),
+      difficulty: nextDifficulty,
+    });
+
+    await interview.save();
+
+    // ================= RESPONSE =================
+
+    return res.status(200).json({
       success: true,
-      message: "Answer submitted successfully",
-      interview,
+      completed: false,
+
+      evaluation,
+
+      nextQuestion: {
+        question: nextQuestion.trim(),
+        difficulty: nextDifficulty,
+      },
+
+      currentQuestion:
+        interview.questions.length - 1,
+
+      totalQuestions:
+        interview.totalQuestions,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Submit answer error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -578,7 +896,9 @@ const submitAnswer = async (req, res) => {
   }
 };
 
-// ================= SUBMIT COMPLETE INTERVIEW =================
+// ============================================================
+// COMPLETE INTERVIEW - LEGACY ENDPOINT
+// ============================================================
 
 const submitInterview = async (req, res) => {
   try {
@@ -605,36 +925,45 @@ const submitInterview = async (req, res) => {
       });
     }
 
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({
+        success: false,
+        message: "Answers must be an array",
+      });
+    }
+
     // ================= EVALUATE ALL ANSWERS =================
 
     const evaluations = await Promise.all(
       answers.map(async (item) => {
-        const evaluation = await evaluateAnswer(
-          item.question,
-          item.answer
-        );
+        const evaluation =
+          await evaluateAnswer(
+            item.question,
+            item.answer
+          );
+
         return {
           question: item.question,
           answer: item.answer,
           score: evaluation.score,
           feedback: evaluation.feedback,
           strengths: evaluation.strengths,
-          improvements: evaluation.improvements,
+          improvements:
+            evaluation.improvements,
         };
       })
     );
 
-    // ================= SAVE QUESTION EVALUATIONS =================
+    // ================= SAVE EVALUATIONS =================
 
     interview.qa = evaluations;
 
-    // ================= GENERATE OVERALL ASSESSMENT =================
+    // ================= OVERALL ASSESSMENT =================
+
     const overallAssessment =
       await generateOverallAssessment(
         evaluations
       );
-
-    // ================= SAVE OVERALL ASSESSMENT =================
 
     interview.feedback = {
       overallSummary:
@@ -650,29 +979,33 @@ const submitInterview = async (req, res) => {
         overallAssessment.recommendation,
     };
 
-    // ================= RECORD END TIME =================
+    // ================= COMPLETE =================
 
     const endedAt = new Date();
 
     const durationSeconds = Math.floor(
-      (endedAt - interview.startedAt) / 1000
+      (endedAt - interview.startedAt) /
+        1000
     );
 
     interview.endedAt = endedAt;
-    interview.durationSeconds = durationSeconds;
+    interview.durationSeconds =
+      durationSeconds;
     interview.status = "completed";
-
-    // ================= SAVE INTERVIEW =================
 
     await interview.save();
 
     res.status(200).json({
       success: true,
-      message: "Interview submitted successfully",
+      message:
+        "Interview submitted successfully",
       interview,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Submit interview error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -681,7 +1014,9 @@ const submitInterview = async (req, res) => {
   }
 };
 
-// ================= EXPORT =================
+// ============================================================
+// EXPORT
+// ============================================================
 
 module.exports = {
   createInterview,
