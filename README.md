@@ -2,6 +2,8 @@
 
 An AI-powered full-stack interview preparation platform that helps users practice personalized mock interviews, receive AI-based answer evaluations, track their performance, and compare resumes with job descriptions.
 
+---
+
 ## Overview
 
 The AI Interview Preparation Platform simulates an interview experience using AI.
@@ -22,7 +24,6 @@ In addition to interview practice, the platform provides performance analytics a
 
 ---
 
-## Features
 ## Unique Features
 
 ### 1. Adaptive AI Interview Engine
@@ -33,50 +34,67 @@ The process works as follows:
 
 ```text
 Interview Question
-        ↓
+        |
+        v
 Candidate Answer
-        ↓
+        |
+        v
 AI Evaluation
-        ↓
+        |
+        v
 Score + Feedback
-        ↓
+        |
+        v
 Difficulty Adjustment
-        ↓
+        |
+        v
 Next AI-Generated Question
+```
+
 Based on the quality of the previous answer, the next question can become easier, remain at the same level, or become harder.
 
 This creates a more personalized interview experience instead of using a fixed sequence of questions.
 
-2. AI Resume–Job Description Matcher
+### 2. AI Resume-Job Description Matcher
 
 The platform includes an AI-powered Resume Matcher that analyzes how well a candidate's resume aligns with a specific job description.
 
 The system supports:
 
-Resume text input
-PDF resume uploads
-DOCX resume uploads
-Automatic resume text extraction
-AI-powered resume and job-description analysis
-Identification of matching skills
-Identification of missing or relevant skills
-Recommendations for improving the resume
+- Resume text input
+- PDF resume uploads
+- DOCX resume uploads
+- Automatic resume text extraction
+- AI-powered resume and job-description analysis
+- Identification of matching skills
+- Identification of missing or relevant skills
+- Recommendations for improving the resume
 
 The process works as follows:
 
+```text
 Resume
   +
 Job Description
-        ↓
+        |
+        v
 Resume Text Extraction
-        ↓
+        |
+        v
 AI Analysis
-        ↓
+        |
+        v
 Match Evaluation
-        ↓
+        |
+        v
 Skills + Gaps + Recommendations
+```
 
 These two features combine adaptive interview practice with practical job-application preparation in a single platform.
+
+---
+
+## Features
 
 ### AI-Powered Mock Interviews
 
@@ -253,7 +271,7 @@ The application follows a full-stack client-server architecture.
                     |  Results             |
                     |  My Interviews       |
                     |  Performance         |
-                    |  Resume Matcher       |
+                    |  Resume Matcher      |
                     |  Profile / Settings  |
                     +----------+-----------+
                                |
